@@ -7,12 +7,18 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "build": "esbuild src/main.ts --bundle --platform=node --target=node22 --format=esm --external:apify --outfile=dist/main.js"
+  },
   "dependencies": {
     "@jp-opendata/attribution": "workspace:*",
+    "@jp-opendata/billing": "workspace:*",
     "@jp-opendata/gov-clients": "workspace:*",
-    "@jp-opendata/normalize-jp": "workspace:*"
+    "@jp-opendata/normalize-jp": "workspace:*",
+    "apify": "^3.4.0"
   },
   "devDependencies": {
-    "@jp-opendata/testing": "workspace:*"
+    "@jp-opendata/testing": "workspace:*",
+    "esbuild": "^0.25.0"
   }
 }

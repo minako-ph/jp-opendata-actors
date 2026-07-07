@@ -1,5 +1,10 @@
 # decisions.md — 実装中の判断ログ（1行/件、新しいものを上に）
 
+- 2026-07-07 モノレポ×apify pushの構成: workspaceパッケージはesbuildでdist/main.jsに事前バンドル（apifyのみexternal）し、.actor/Dockerfileはdistとpackage.docker.jsonのみ使用。push前に`pnpm --filter @jp-opendata/actor-edinet-filings build`必須。
+- 2026-07-07 財務値の要素IDマップ（SummaryOfBusinessResults系7項目）は公開仕様に基づく仮置き。営業利益は業種別様式で揺れるため実CSV採取後に検証（未取得はnull＝推測禁止で安全側）。単位は円/千円/百万円をJPY生値へ正規化。連結優先・無ければ個別（financials_basisで明示）。
+- 2026-07-07 enrich（FR-1 enriched）はANTHROPIC_API_KEY未設定で検証不能のため未実装のまま前進。enrich=trueは警告ログ＋basic出力・record-enriched課金なし。公開前に「実装完了」か「v1掲載から一旦除外」かを事業主が選択（docs/launch/edinet-filings.md 公開ゲート3）。
+- 2026-07-07 FR-C8の実行失敗条件「認証エラー」はEDINETのボディ内StatusCode 401/403で判定。FR-C7超過時は打ち切り＋警告（days_truncated/documents_truncatedをサマリで報告）。共通ランナー化（§15）は#2着手時に抽出予定。
+
 - 2026-07-07 #4法人番号もNexGenDataの既存Actorと完全競合になる見込み→Phase 3の公開前スキャンで再確認（docs/research/store-scan-edinet.md）。
 - 2026-07-07 受入基準6(#1)実施: EDINET公式APIベースの完全競合2件を確認（メタデータ＋DLリンク中心・底値価格）。差別化は柱②（構造化財務値＋逐語検証＋golden CI）でREADME第1段落に反映。名前は§5.1のまま変更なし・価格競争に応じない。§11チェックリスト消化状況: docs/launch/edinet-filings.md
 

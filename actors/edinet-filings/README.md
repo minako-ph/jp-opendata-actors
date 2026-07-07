@@ -1,6 +1,6 @@
 # Japan Company Filings (EDINET Official)
 
-Structured financial filings of Japanese listed companies, in English. This Actor reads the **official EDINET API** (Japan's Financial Services Agency disclosure system) and returns annual and semi-annual securities reports as clean, snake_case JSON — filing metadata plus key financials, with the original Japanese preserved in `*_ja` fields. **Official API based — no scraping**, no brittle selectors, no headless browsers. Tested against frozen datasets on every release.
+Structured financial filings of Japanese listed companies, in English. This Actor reads the **official EDINET API** (Japan's Financial Services Agency disclosure system) and returns annual and semi-annual securities reports as clean, snake_case JSON — **parsed, analysis-ready fields, not just document download links**: key financials as numbers with normalized units and ISO dates, with the original Japanese preserved in `*_ja` fields. Optional English summaries are kept only after verbatim verification against the source text. **Official API based — no scraping**, no brittle selectors, no headless browsers. Tested against frozen datasets on every release.
 
 ## What you get
 

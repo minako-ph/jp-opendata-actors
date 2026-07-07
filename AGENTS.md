@@ -5,3 +5,4 @@
 未定義事項は最小実装＋TODOで前進し、docs/decisions.md に1行残す。
 検証: pnpm typecheck && pnpm test（Phase 0でスクリプト整備後、着手前に緑を確認）
 柱1（jp-tender-intel）の出荷作業と競合したら常に柱1を優先する。
+Store掲載文言・README構成・ローンチ手順の正: docs/marketing.md（引継書§10はこれに従属）

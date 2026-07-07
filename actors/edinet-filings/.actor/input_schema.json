@@ -1,0 +1,59 @@
+{
+  "title": "Japan Company Filings (EDINET Official)",
+  "description": "Fetch structured filings of Japanese listed companies from the official EDINET API. Pick a date range and run — defaults return meaningful results in under a minute.",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "date_from": {
+      "title": "From date",
+      "type": "string",
+      "description": "Start of the submission-date range (YYYY-MM-DD). EDINET lists filings per submission day.",
+      "editor": "datepicker",
+      "prefill": "2026-06-24"
+    },
+    "date_to": {
+      "title": "To date",
+      "type": "string",
+      "description": "End of the submission-date range (YYYY-MM-DD), inclusive. Up to 31 days are scanned per run.",
+      "editor": "datepicker",
+      "prefill": "2026-06-30"
+    },
+    "doc_types": {
+      "title": "Document types",
+      "type": "array",
+      "description": "EDINET document type codes to include. 120 = Annual Securities Report, 160 = Semi-Annual Report.",
+      "editor": "select",
+      "items": {
+        "type": "string",
+        "enum": ["120", "160"],
+        "enumTitles": ["120 — Annual Securities Report", "160 — Semi-Annual Report"]
+      },
+      "prefill": ["120", "160"]
+    },
+    "include_amendments": {
+      "title": "Include amendments",
+      "type": "boolean",
+      "description": "Also include amended annual reports (document type 130).",
+      "default": false
+    },
+    "edinet_codes": {
+      "title": "EDINET codes (optional)",
+      "type": "array",
+      "description": "Only keep filings by these EDINET filer codes (e.g. E02144).",
+      "editor": "stringList"
+    },
+    "sec_codes": {
+      "title": "Securities codes (optional)",
+      "type": "array",
+      "description": "Only keep filings by these securities codes (e.g. 72030 for 7203 Toyota).",
+      "editor": "stringList"
+    },
+    "enrich": {
+      "title": "LLM-enriched English summaries",
+      "type": "boolean",
+      "description": "Add short English summaries (business overview, key risks, segments) per filing. Charged as a separate per-record event — see Pricing in the README.",
+      "default": false
+    }
+  },
+  "required": ["date_from", "date_to"]
+}

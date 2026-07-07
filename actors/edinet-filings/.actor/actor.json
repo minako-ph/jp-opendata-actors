@@ -1,0 +1,11 @@
+{
+  "actorSpecification": 1,
+  "name": "japan-edinet-filings",
+  "title": "Japan Company Filings (EDINET Official)",
+  "description": "Structured financial filings of listed Japanese companies, in English. Annual & semi-annual reports from the official EDINET API as clean JSON.",
+  "version": "0.1",
+  "input": "./input_schema.json",
+  "meta": {
+    "templateId": "ts-empty"
+  }
+}

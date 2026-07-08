@@ -1,5 +1,7 @@
 # decisions.md — 実装中の判断ログ（1行/件、新しいものを上に）
 
+- 2026-07-08 enrich（FR-1 enriched）実装で公開ゲート3を(a)解消: 同期Messages API＋tool use＋temperature0＋prompt caching（R2-1）、入力は既取得CSVのTextBlock 3節（HTML除去・~8k字切詰め・追加APIコールなし）、N-9はLLMに原文termsを出させ英文中数値と共にverifyVerbatim（不一致はnull＋verification_failed）、LLM失敗はbasicフォールバック（FR-C8・enriched課金なし）、原価はサマリ集計＋終端平均ログ（R2-2入力）。実LLM確認: $0.0043/doc→$0.05でマージン約91%見込み。プロンプトはprompts/edinet-summary-v1.md正典＋埋め込み定数（同期テストで担保）。schema_version 0.2.0へ。
+
 - 2026-07-08 レビュー修正: F-1キー漏洩サニタイズ（redactUrlForErrorを両エラークラスのコンストラクタ内部で適用、回帰テスト2本追加）ほかF-2〜F-7対応（enrichにComing soon注記／陳腐化コメント2件／Dockerのapifyを3.7.2に完全固定／pnpm-workspace調整／launch文書にapify-default-dataset-item削除を明記）。F-6はpnpm 11.10が`allowBuilds`を正式キーとするため`onlyBuiltDependencies`併記の形に調整（installは警告なし）。
 
 - 2026-07-08 追補v1.1対応（矛盾修正）: R2-1/2 enrichは同期Messages API＋prompt cachingに変更し.envの単価をclaude-haiku-4-5同期定価($1/$5)へ／R2-3 無料枠を実行単位のコード実装に変更（billingのfreeAllowance、#1=最初の3書類・仮置き）しREADME/入力スキーマの表記も更新／R2-5 独自actor-startイベントを廃止（合成apify-actor-startに$0.02設定・primary=record-basic、コードからの発火なし）／R2-6 ChargeResultのeventChargeLimitReachedで部分結果graceful終了（summary.charge_limit_reached）／R2-4 CIにbundle生成ステップ追加。R2-4のバンドル方式・R2-11のZIP前提は実装済みで整合、R2-7〜9はコンソール作業としてlaunch文書に反映。

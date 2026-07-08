@@ -9,6 +9,8 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@jp-opendata/normalize-jp": "workspace:*"
+    "@anthropic-ai/sdk": "^0.71.0",
+    "@jp-opendata/normalize-jp": "workspace:*",
+    "zod": "^3.25.0"
   }
 }

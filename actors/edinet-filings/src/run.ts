@@ -1,8 +1,10 @@
 import type { Billing } from '@jp-opendata/billing';
+import type { EdinetEnrichOutcome } from '@jp-opendata/enrich';
 import {
   EdinetApiError,
   RateLimitAbortError,
   parseEdinetCsvZip,
+  type EdinetCsvRow,
   type EdinetListResult,
 } from '@jp-opendata/gov-clients';
 import type { HttpStats } from '@jp-opendata/gov-clients';
@@ -53,7 +55,20 @@ export interface RunSummary {
   aborted_by_rate_limit: boolean;
   /** ユーザー設定の課金上限に到達し、部分結果でgraceful終了した（R2-6。エラーではない） */
   charge_limit_reached: boolean;
+  /** enrichに成功しenriched課金したレコード数 */
+  records_enriched: number;
+  /** LLM失敗によりbasicへフォールバックした数（FR-C8。enriched課金なし） */
+  enrich_failures: number;
+  enrich_input_tokens: number;
+  enrich_output_tokens: number;
+  /** tokens×ENRICH_PRICE_*の概算原価合計（USD）。R2-2の単価確定の入力 */
+  enrich_cost_usd: number;
+  /** enrich成功1件あたりの平均原価（USD）。実行終端で算出 */
+  enrich_avg_cost_usd: number;
 }
+
+/** enrich注入点: 既取得CSVの行からLLMサマリを生成する（実体はmain.tsで合成） */
+export type Enricher = (rows: EdinetCsvRow[]) => Promise<EdinetEnrichOutcome>;
 
 export interface RunDeps {
   client: EdinetClientLike;
@@ -64,6 +79,8 @@ export interface RunDeps {
   retrievedAt: string;
   /** N-4アラート送信（未設定ならログのみの運用） */
   alert?: (summary: RunSummary) => Promise<void>;
+  /** enrich=true時に使うLLMサマリ生成（未設定でenrich要求されたら実行失敗＝設定不備） */
+  enrich?: Enricher;
   /** テスト用の上限上書き */
   maxListDays?: number;
   maxDocuments?: number;
@@ -109,10 +126,9 @@ export async function runEdinetFilings(
   const maxDays = deps.maxListDays ?? MAX_LIST_DAYS;
   const maxDocuments = deps.maxDocuments ?? MAX_DOCUMENTS;
 
-  if (input.enrich) {
-    // TODO(Phase 1b): packages/enrichのBatch API実装後に接続する。実装まではbasicのみ返す
-    deps.log.warning(
-      'enrich=true was requested, but LLM-enriched summaries are not available yet in this version. Returning basic records only (no record-enriched charges).',
+  if (input.enrich && deps.enrich === undefined) {
+    throw new RunFailedError(
+      'enrich=true requires LLM configuration (ANTHROPIC_API_KEY). The Actor is misconfigured — contact the developer.',
     );
   }
 
@@ -143,6 +159,12 @@ export async function runEdinetFilings(
     rate_limit_hits: 0,
     aborted_by_rate_limit: false,
     charge_limit_reached: false,
+    records_enriched: 0,
+    enrich_failures: 0,
+    enrich_input_tokens: 0,
+    enrich_output_tokens: 0,
+    enrich_cost_usd: 0,
+    enrich_avg_cost_usd: 0,
   };
 
   try {
@@ -191,19 +213,49 @@ export async function runEdinetFilings(
     for (const { doc, sourceUrl } of matched) {
       const basic = toBasicItem(doc, { sourceUrl, retrievedAt: deps.retrievedAt });
       try {
-        const financials =
+        const rows: EdinetCsvRow[] =
           doc.csvFlag === '1'
-            ? extractFinancials(parseEdinetCsvZip(await deps.client.fetchDocument(doc.docID, 5)))
-            : emptyFinancials();
-        await deps.pushData({ ...basic, financials });
+            ? parseEdinetCsvZip(await deps.client.fetchDocument(doc.docID, 5))
+            : [];
+        const financials = rows.length > 0 ? extractFinancials(rows) : emptyFinancials();
+
+        // enrich: LLM失敗は該当docをbasicのみで出力して継続（FR-C8。enriched課金なし）
+        let enrichOutcome: EdinetEnrichOutcome | null = null;
+        if (input.enrich && deps.enrich) {
+          try {
+            const candidate = await deps.enrich(rows);
+            if (candidate.invoked) {
+              enrichOutcome = candidate;
+              summary.enrich_input_tokens += candidate.usage.inputTokens;
+              summary.enrich_output_tokens += candidate.usage.outputTokens;
+              summary.enrich_cost_usd += candidate.usage.costUsd;
+            }
+          } catch (error) {
+            summary.enrich_failures++;
+            deps.log.warning(
+              `Enrichment failed for ${doc.docID}; falling back to basic: ${String(error)}`,
+            );
+          }
+        }
+
+        await deps.pushData(
+          enrichOutcome === null
+            ? { ...basic, financials }
+            : { ...basic, financials, ...enrichOutcome.enrichment },
+        );
         const outcome = await deps.billing.charge('record-basic');
         summary.records_pushed++;
-        if (outcome.limitReached) {
+        let limitReached = outcome.limitReached;
+        if (enrichOutcome !== null) {
+          // 成功レコードのみenriched課金（freeAllowanceは適用しない＝main.tsで設定しない）
+          const enrichedCharge = await deps.billing.charge('record-enriched');
+          summary.records_enriched++;
+          limitReached = limitReached || enrichedCharge.limitReached;
+        }
+        if (limitReached) {
           // R2-6: ユーザー設定の最大課金額に到達 → 部分結果＋状態メッセージでgracefulに終了
           summary.charge_limit_reached = true;
-          deps.log.warning(
-            'Max charge limit for record-basic reached; stopping gracefully with partial results.',
-          );
+          deps.log.warning('Max charge limit reached; stopping gracefully with partial results.');
           break;
         }
       } catch (error) {
@@ -245,6 +297,18 @@ async function finalizeSummary(
   const processed = summary.records_pushed + summary.record_errors;
   summary.record_failure_rate = processed === 0 ? 0 : summary.record_errors / processed;
   summary.rate_limit_hits = deps.client.getHttpStats().rateLimitHits;
+
+  // R2-2: enriched単価確定の入力として平均原価を実行終端でログ出力する
+  summary.enrich_cost_usd = Number(summary.enrich_cost_usd.toFixed(6));
+  summary.enrich_avg_cost_usd =
+    summary.records_enriched === 0
+      ? 0
+      : Number((summary.enrich_cost_usd / summary.records_enriched).toFixed(6));
+  if (summary.records_enriched > 0) {
+    deps.log.info(
+      `Enrichment cost: total $${summary.enrich_cost_usd} for ${summary.records_enriched} records (avg $${summary.enrich_avg_cost_usd}/record, in=${summary.enrich_input_tokens} out=${summary.enrich_output_tokens} tokens)`,
+    );
+  }
 
   const shouldAlert =
     forceAlert ||

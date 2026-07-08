@@ -13,6 +13,7 @@
   "dependencies": {
     "@jp-opendata/attribution": "workspace:*",
     "@jp-opendata/billing": "workspace:*",
+    "@jp-opendata/enrich": "workspace:*",
     "@jp-opendata/gov-clients": "workspace:*",
     "@jp-opendata/normalize-jp": "workspace:*",
     "apify": "^3.4.0"

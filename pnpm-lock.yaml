@@ -38,6 +38,9 @@ importers:
       '@jp-opendata/billing':
         specifier: workspace:*
         version: link:../../packages/billing
+      '@jp-opendata/enrich':
+        specifier: workspace:*
+        version: link:../../packages/enrich
       '@jp-opendata/gov-clients':
         specifier: workspace:*
         version: link:../../packages/gov-clients
@@ -61,9 +64,15 @@ importers:
 
   packages/enrich:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.71.0
+        version: 0.71.2(zod@3.25.76)
       '@jp-opendata/normalize-jp':
         specifier: workspace:*
         version: link:../normalize-jp
+      zod:
+        specifier: ^3.25.0
+        version: 3.25.76
 
   packages/gov-clients:
     dependencies:
@@ -99,6 +108,15 @@ importers:
 
 packages:
 
+  '@anthropic-ai/sdk@0.71.2':
+    resolution: {integrity: sha512-TGNDEUuEstk/DKu0/TflXAEt+p+p/WhTlFzEnoosvbaDU2LTjm42igSdlL0VijrKpWejtOKxX0b8A7uc+XiSAQ==}
+    hasBin: true
+    peerDependencies:
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
+
   '@apify/consts@2.53.3':
     resolution: {integrity: sha512-X26SC8d6kLMSWzBcYldKgzKFJXGnTAka/bRmvL+iYHJEabFzVYupj64kGhar6QTPeGKNt6WR/hNE+dToNqHZQA==}
 
@@ -124,6 +142,10 @@ packages:
 
   '@apify/utilities@2.34.1':
     resolution: {integrity: sha512-9jHBMQEcJS/NTQg2joYOH8QdvEZLPNteKwV3dCpSQcQs0dsK8TgrAbc/ZzJWlK4/HSJK/RKQ1QbD1Ntoh9FwUg==}
+
+  '@babel/runtime@7.29.7':
+    resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
+    engines: {node: '>=6.9.0'}
 
   '@borewit/text-codec@0.2.2':
     resolution: {integrity: sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ==}
@@ -1382,6 +1404,10 @@ packages:
   json-buffer@3.0.1:
     resolution: {integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==}
 
+  json-schema-to-ts@3.1.1:
+    resolution: {integrity: sha512-+DWg8jCJG2TEnpy7kOm/7/AxaYoaRbjVB4LFZLySZlWn8exGs3A4OLJR966cVvU26N7X9TWxl+Jsw7dzAqKT6g==}
+    engines: {node: '>=16'}
+
   json-schema-traverse@0.4.1:
     resolution: {integrity: sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg==}
 
@@ -1750,6 +1776,9 @@ packages:
     resolution: {integrity: sha512-LktZQb3IeoUWB9lqR5EWTHgW/VTITCXg4D21M+lvybRVdylLrRMnqaIONLVb5mav8vM19m44HIcGq4qASeu2Qw==}
     engines: {node: '>=16'}
 
+  ts-algebra@2.0.0:
+    resolution: {integrity: sha512-FPAhNPFMrkwz76P7cdjdmiShwMynZYN6SgOujD1urY4oNm80Ou9oMdmbR45LotcKOXoy7wSmHkRFE6Mxbrhefw==}
+
   ts-api-utils@2.5.0:
     resolution: {integrity: sha512-OJ/ibxhPlqrMM0UiNHJ/0CKQkoKF243/AEmplt3qpRgkW8VG7IfOS41h7V8TjITqdByHzrjcS/2si+y4lIh8NA==}
     engines: {node: '>=18.12'}
@@ -1923,6 +1952,12 @@ packages:
 
 snapshots:
 
+  '@anthropic-ai/sdk@0.71.2(zod@3.25.76)':
+    dependencies:
+      json-schema-to-ts: 3.1.1
+    optionalDependencies:
+      zod: 3.25.76
+
   '@apify/consts@2.53.3': {}
 
   '@apify/datastructures@2.0.6': {}
@@ -1952,6 +1987,8 @@ snapshots:
     dependencies:
       '@apify/consts': 2.53.3
       '@apify/log': 2.5.41
+
+  '@babel/runtime@7.29.7': {}
 
   '@borewit/text-codec@0.2.2': {}
 
@@ -3194,6 +3231,11 @@ snapshots:
 
   json-buffer@3.0.1: {}
 
+  json-schema-to-ts@3.1.1:
+    dependencies:
+      '@babel/runtime': 7.29.7
+      ts-algebra: 2.0.0
+
   json-schema-traverse@0.4.1: {}
 
   json-stable-stringify-without-jsonify@1.0.1: {}
@@ -3551,6 +3593,8 @@ snapshots:
   tough-cookie@6.0.1:
     dependencies:
       tldts: 7.4.6
+
+  ts-algebra@2.0.0: {}
 
   ts-api-utils@2.5.0(typescript@5.9.3):
     dependencies:

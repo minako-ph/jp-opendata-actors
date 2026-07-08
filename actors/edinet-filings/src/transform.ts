@@ -7,7 +7,8 @@ import { EDINET_DOC_TYPE, type EdinetDocumentResult } from '@jp-opendata/gov-cli
  * financialsは run.ts で extractFinancials の結果を合成する。
  */
 
-export const EDINET_SCHEMA_VERSION = '0.1.0';
+// 0.2.0: enriched出力（business_overview_en / key_risks_en / segments_en）を追加
+export const EDINET_SCHEMA_VERSION = '0.2.0';
 
 const DOC_TYPE_EN: Record<string, string> = {
   [EDINET_DOC_TYPE.ANNUAL_REPORT]: 'Annual Securities Report',

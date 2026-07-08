@@ -1,10 +1,17 @@
 import { Actor, log } from 'apify';
 import { createBilling } from '@jp-opendata/billing';
+import {
+  ENRICH_DEFAULT_MODEL,
+  createAnthropicMessagesInvoke,
+  enrichEdinetFiling,
+} from '@jp-opendata/enrich';
 import { EdinetClient } from '@jp-opendata/gov-clients';
+import { extractEdinetTextSections } from './enrich-input.js';
 import {
   RunFailedError,
   runEdinetFilings,
   type EdinetFilingsInput,
+  type Enricher,
   type RunSummary,
 } from './run.js';
 
@@ -36,12 +43,27 @@ try {
   }
 
   // Startイベントは合成 `apify-actor-start` をプラットフォームが自動課金する（R2-5）。
-  // 無料枠は実行単位: 最初のN書類は課金しない（R2-3。仮置き値、公開前に確定）
+  // 無料枠は実行単位: 最初のN書類は課金しない（R2-3。仮置き値、公開前に確定）。
+  // record-enrichedにはfreeAllowanceを適用しない（LLM原価が実費で発生するため）。
   const FREE_RECORDS_PER_RUN = 3;
   const billing = createBilling(
     { charge: (options) => Actor.charge(options) },
     { freeAllowance: { 'record-basic': FREE_RECORDS_PER_RUN } },
   );
+
+  // enrich: 同期Messages API（追補R2-1）。キー未設定でenrich=trueが来た場合はrun側で実行失敗にする
+  let enrich: Enricher | undefined;
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (anthropicKey) {
+    const invoke = createAnthropicMessagesInvoke({ apiKey: anthropicKey });
+    const model = process.env.ENRICH_MODEL ?? ENRICH_DEFAULT_MODEL;
+    const prices = {
+      usdPerMtokIn: Number(process.env.ENRICH_PRICE_IN ?? '1.00'),
+      usdPerMtokOut: Number(process.env.ENRICH_PRICE_OUT ?? '5.00'),
+    };
+    enrich = (rows) =>
+      enrichEdinetFiling({ sections: extractEdinetTextSections(rows), invoke, model, prices });
+  }
 
   await runEdinetFilings(input, {
     client: new EdinetClient({ apiKey }),
@@ -54,6 +76,7 @@ try {
     },
     retrievedAt: new Date().toISOString(),
     alert: sendWebhookAlert,
+    ...(enrich ? { enrich } : {}),
   });
   await Actor.exit();
 } catch (error) {

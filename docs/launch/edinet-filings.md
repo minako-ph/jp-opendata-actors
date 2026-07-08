@@ -8,7 +8,7 @@
 | 2 | 名前・スラッグ・説明文 | **準備済／一部要実施** | actor.jsonに name=`japan-edinet-filings`・title・通常説明文(143字)を設定済み。**SEO名/SEO説明文はコンソール専用項目**→公開時に下記の確定文言を設定 |
 | 3 | README | **準備済** | §5.3テンプレ7節・490語・出力サンプルJSON・正直明記節・"Tested against frozen datasets"（actors/edinet-filings/README.md） |
 | 4 | input prefill実機確認 | **済（ローカルE2E）** | 2026-07-08実機確認: 実APIに対しprefill相当入力で**最初の結果まで1.46秒**（目標30秒）。`scripts/live-e2e.ts`で再現可。Apify上での最終確認とprefill日付の更新はpush後に実施 |
-| 5 | カテゴリ・タグ・PPE設定 | **要実施（コンソール）** | 推奨カテゴリ: Finance／Business。PPE（追補v1.1準拠）: 合成イベント**apify-actor-start**に$0.02（独自actor-startは定義しない・R2-5）、record-basic $0.005、record-enrichedは**実測原価でマージン85%以上を満たす額に確定**（目安$0.05〜0.10・R2-2）。**primary eventはrecord-basicに指定**。無料枠は実行単位でコード実装済み（最初の3書類・R2-3）につきコンソール設定不要。**permissionsはlimitedにする**（R2-7）。**組み込み`apify-default-dataset-item`イベントは削除する**（dataset書き込み毎に課金され`record-basic`と二重課金になるため・F-7）。価格はドラフト保存でテスト→公開（重要変更は14日周知＋月1回まで・イベント削除不可につきカタログは公開前確定・R2-8） |
+| 5 | カテゴリ・タグ・PPE設定 | **要実施（コンソール）** | 推奨カテゴリ: Finance／Business。PPE（追補v1.1準拠）: 合成イベント**apify-actor-start**に$0.02（独自actor-startは定義しない・R2-5）、record-basic $0.005、record-enrichedは**実測原価でマージン85%以上を満たす額に確定**（目安$0.05〜0.10・R2-2）。実測初期値: live-enrich 1件で**$0.0043/doc**（claude-haiku-4-5同期・v1プロンプト）→$0.05設定でマージン約91%の見込み。公開前に複数銘柄で `scripts/live-enrich.ts` とrunサマリの `enrich_avg_cost_usd` を採取して最終確定。**primary eventはrecord-basicに指定**。無料枠は実行単位でコード実装済み（最初の3書類・R2-3）につきコンソール設定不要。**permissionsはlimitedにする**（R2-7）。**組み込み`apify-default-dataset-item`イベントは削除する**（dataset書き込み毎に課金され`record-basic`と二重課金になるため・F-7）。価格はドラフト保存でテスト→公開（重要変更は14日周知＋月1回まで・イベント削除不可につきカタログは公開前確定・R2-8） |
 | 6 | ファミリー相互リンク | **済（現時点分）** | READMEに`## More Japan data Actors`節あり。#1が初公開のため追記先なし。#2以降の公開時に#1のREADMEへリンク追記。プロフィールbio: "Official-API-based Japan data actors. TypeScript, golden-tested." |
 | 7 | 記事リンク | **対象外** | 記事AはPhase 2完了時（#1〜#3公開後）。#1単独では該当なし |
 | 8 | 公開後1週間の毎日確認 | **公開後** | 実行ログとIssuesを1日1回・1週間。以降はN-4通常監視へ |
@@ -23,6 +23,6 @@
 
 1. ~~Actor main実装~~ **済**（2026-07-07: 日ループ・FR-C7/C8・billing・N-4集計・財務値CSV(type=5)パース）
 2. ~~実応答fixture採取→golden差し替え＋財務値要素IDマップ検証~~ **済**（2026-07-08: 実データで抽出仕様を確定、fixture/golden実データ化。goldenのdiffレビューは事業主）
-3. **enrich（LLM英文サマリ）の扱いを決める**: 現状はenrich=trueで警告のみ（basic出力）。入力スキーマとREADMEには**Coming soon注記を付与済み**（F-2）。公開前に (a)enrich実装を完了する（追補R2-1: 同期Messages API＋prompt caching。単価はR2-2の実測ルールで確定。**完了時は入力スキーマ・READMEのComing soon注記2箇所を除去**） か (b)basicのみでv1公開する（**その場合は入力項目enrich・READMEのenrich段落・PPEのenrichedイベントごと削除**） か選択（正直明記の原則上、未実装機能を掲載したまま公開しない）
+3. ~~enrich（LLM英文サマリ）の扱いを決める~~ **済＝(a)実装完了で解消**（2026-07-08: 同期Messages API＋tool use＋prompt caching・逐語照合N-9・LLM失敗はbasicフォールバック。Coming soon注記は除去済み。実LLM品質確認は `scripts/live-enrich.ts`）
 4. デプロイ手順: `pnpm --filter @jp-opendata/actor-edinet-filings build` → `apify push`（.actor/Dockerfileがdist/main.jsを使用。手動。CIはbundle生成の成功までを担保・R2-4）
 5. **Apify Consoleのbilling & payment details（payout先）を完了する**（収益化ウィザードの前提・人間作業・R2-9）

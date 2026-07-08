@@ -22,7 +22,7 @@
     "source_url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2026-06-30&type=2",
     "retrieved_at": "2026-07-07T00:00:00+09:00",
     "attribution": "出典：金融庁 EDINET",
-    "schema_version": "0.1.0",
+    "schema_version": "0.2.0",
     "financials": {
       "net_sales": null,
       "operating_income": null,
@@ -57,7 +57,7 @@
     "source_url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2026-06-30&type=2",
     "retrieved_at": "2026-07-07T00:00:00+09:00",
     "attribution": "出典：金融庁 EDINET",
-    "schema_version": "0.1.0",
+    "schema_version": "0.2.0",
     "financials": {
       "net_sales": 4928920000,
       "operating_income": 60234000,
@@ -92,7 +92,7 @@
     "source_url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2026-06-30&type=2",
     "retrieved_at": "2026-07-07T00:00:00+09:00",
     "attribution": "出典：金融庁 EDINET",
-    "schema_version": "0.1.0",
+    "schema_version": "0.2.0",
     "financials": {
       "net_sales": 4928920000,
       "operating_income": 60234000,
@@ -127,7 +127,7 @@
     "source_url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2026-06-30&type=2",
     "retrieved_at": "2026-07-07T00:00:00+09:00",
     "attribution": "出典：金融庁 EDINET",
-    "schema_version": "0.1.0",
+    "schema_version": "0.2.0",
     "financials": {
       "net_sales": 4928920000,
       "operating_income": 60234000,

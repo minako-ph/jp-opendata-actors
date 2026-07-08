@@ -1,40 +1,11 @@
-import { normalizeForVerbatimMatch } from '@jp-opendata/normalize-jp';
-
 /**
- * LLM enrichmentパイプライン骨格（引継書§6、追補v1.1 R2-1で改訂・N-9）。
- * TODO(Phase 1): **同期Messages API**呼び出し（既定 claude-haiku-4-5, temperature 0,
- * tool useでJSONスキーマ固定, prompt cachingでシステムプロンプトをキャッシュ）と
- * 原価ログ（tokens×単価env、マージン85%割れ警告）を実装する。
- * Batch APIは使わない（非同期のためオンデマンドActorの「30秒以内に結果」と非両立。R2-1）。
+ * LLM enrichmentパイプライン（引継書§6、追補v1.1 R2-1・N-9）。
+ * 同期Messages API（claude-haiku-4-5, temperature 0, tool useでJSONスキーマ固定,
+ * prompt caching）。Batch APIは使わない（非同期のためオンデマンドActorと非両立。R2-1）。
  * プロンプトは packages/enrich/prompts/ でバージョン管理する。
  */
 
-export type GenerationMethod = 'api_native' | 'rule' | 'llm';
-
-/** 生成項目に必ず付与するメタ（N-9③） */
-export interface GeneratedField<T> {
-  value: T | null;
-  confidence: number;
-  method: GenerationMethod;
-  verification_failed?: boolean;
-}
-
-/**
- * 逐語照合（N-9①）: LLM出力の候補値（固有名詞・数値）が正規化済み原文に部分一致するか検証する。
- * 不一致の数値・固有名詞フィールドは呼び出し側で null化＋verification_failed:true とする。
- */
-export function verifyVerbatim(candidate: string, sourceText: string): boolean {
-  const normalizedCandidate = normalizeForVerbatimMatch(candidate);
-  if (normalizedCandidate === '') return false;
-  return normalizeForVerbatimMatch(sourceText).includes(normalizedCandidate);
-}
-
-/** 照合結果を GeneratedField に反映する（数値・固有名詞フィールド用） */
-export function applyVerbatimVerification<T extends string | number>(
-  field: GeneratedField<T>,
-  sourceText: string,
-): GeneratedField<T> {
-  if (field.value === null) return field;
-  if (verifyVerbatim(String(field.value), sourceText)) return field;
-  return { ...field, value: null, verification_failed: true };
-}
+export * from './verbatim.js';
+export * from './edinet.js';
+export * from './anthropic.js';
+export * from './prompt-edinet-summary-v1.js';

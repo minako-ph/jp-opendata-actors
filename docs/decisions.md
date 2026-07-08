@@ -1,5 +1,12 @@
 # decisions.md — 実装中の判断ログ（1行/件、新しいものを上に）
 
+- 2026-07-08 動作検証: 不動産ライブラリ実疎通OK（**キー到着済み**＝#3ゲート解除。XIT001=549件/千代田区2024、応答はgzip、データなしは404を確認）。Anthropicキー・claude-haiku-4-5も有効（count_tokensで確認）。
+- 2026-07-08 gBizINFO v2実疎通OK（法人基本・補助金・法人検索）。補助金レコードは`{title,amount,date_of_approval,government_departments,target}`で**note列なしを実データで確定**→FR-2のdata_origin(jGrants識別)は`metadata_flg=true`の`meta-data.source`で要検証（Phase 2）。
+- 2026-07-08 EDINETレート簡易実測（未決#2進捗): 1req/秒直列で一覧＋書類取得×計10req超、429/403なし・一覧0.7s・zip1-2s。仮置き1req/秒を維持し、本格実測は数日分採取時に実施。
+- 2026-07-08 ファンド開示（投信有報等）は経営指標のタクソノミが異なり財務値は全null（is_fund=trueで利用者が絞り込める。READMEの正直明記と整合）。
+- 2026-07-08 財務値抽出の仕様を実CSV（S100YIZC個別JGAAP・S100YNCJ連結IFRS保険）で確定: ①連結/個別は「連結・個別」列でなく**contextId完全一致**で判定（サマリ行は「その他」のため）②時点項目の相対年度は「当期末」③要素IDは候補リスト方式（IFRS変種・個別のNetIncomeLoss・jppfs営業利益フォールバック）④連結があれば連結のみ採用し基礎の混在を防ぐ（financials_basisで明示）。業種別様式（銀行・証券等）はカバレッジ拡大TODO。
+- 2026-07-08 EDINET実応答fixture採取完了→合成fixtureを削除しfixture/goldenを実データへ差し替え（一覧は代表4件・CSVは当期行にトリミング。値の改変なし）。E2E実機確認: 最初の結果まで1.46秒（§11-4の30秒以内クリア）。
+
 - 2026-07-07 モノレポ×apify pushの構成: workspaceパッケージはesbuildでdist/main.jsに事前バンドル（apifyのみexternal）し、.actor/Dockerfileはdistとpackage.docker.jsonのみ使用。push前に`pnpm --filter @jp-opendata/actor-edinet-filings build`必須。
 - 2026-07-07 財務値の要素IDマップ（SummaryOfBusinessResults系7項目）は公開仕様に基づく仮置き。営業利益は業種別様式で揺れるため実CSV採取後に検証（未取得はnull＝推測禁止で安全側）。単位は円/千円/百万円をJPY生値へ正規化。連結優先・無ければ個別（financials_basisで明示）。
 - 2026-07-07 enrich（FR-1 enriched）はANTHROPIC_API_KEY未設定で検証不能のため未実装のまま前進。enrich=trueは警告ログ＋basic出力・record-enriched課金なし。公開前に「実装完了」か「v1掲載から一旦除外」かを事業主が選択（docs/launch/edinet-filings.md 公開ゲート3）。

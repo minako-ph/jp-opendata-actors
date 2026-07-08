@@ -11,7 +11,7 @@ const goldenDir = join(here, 'golden');
 
 describe('edinet-filings golden', () => {
   it('一覧fixture → basicアイテム変換がgoldenと一致する', () => {
-    const raw = loadJsonFixture(fixturesDir, 'documents.2026-06-30.spec-based.json');
+    const raw = loadJsonFixture(fixturesDir, 'documents.2026-06-30.json');
     const parsed = edinetDocumentListSchema.parse(raw);
     const items = (parsed.results ?? []).map((doc) =>
       toBasicItem(doc, {
@@ -19,7 +19,7 @@ describe('edinet-filings golden', () => {
         retrievedAt: '2026-07-07T00:00:00+09:00',
       }),
     );
-    expect(items).toHaveLength(3);
+    expect(items).toHaveLength(4);
     expectGolden(goldenDir, 'documents.2026-06-30.basic.json', items);
   });
 });

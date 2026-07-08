@@ -4,7 +4,15 @@ import { parseJpNumber } from '@jp-opendata/normalize-jp';
 /**
  * EDINET CSV(type=5)の「主要な経営指標等」から主要財務値を抽出する（FR-1 basic）。
  * v1スコープ: XBRLフルパースは行わず、CSV出力から取れる範囲に限定（要件書FR-1）。
- * 原文に無い項目はnull（推測禁止 N-9②）。当期・連結を優先し、連結が無ければ個別を使う。
+ * 原文に無い項目はnull（推測禁止 N-9②）。
+ *
+ * 実データ検証（2026-07-08, S100YIZC個別/S100YNCJ連結IFRS）で確定した仕様:
+ * - 連結/個別は「連結・個別」列では判定できない（サマリ行は「その他」）。
+ *   contextIdの完全一致で判定する: CurrentYearDuration/Instant=連結、
+ *   同_NonConsolidatedMember=個別。セグメント等のMember付きcontextは完全一致で除外される。
+ * - 時点項目（総資産・純資産・従業員数）の相対年度は「当期末」（当期ではない）。
+ * - 要素IDは会計基準・業種で揺れる（IFRSは*IFRS*、保険は売上高系なし等）→候補リスト方式。
+ * - 基礎の混在を避けるため、連結値が1つでもあれば連結のみ、無ければ個別のみを採用する。
  */
 
 export interface FilingFinancials extends Record<string, unknown> {
@@ -19,28 +27,93 @@ export interface FilingFinancials extends Record<string, unknown> {
   financials_basis: 'consolidated' | 'non_consolidated' | null;
 }
 
+type Basis = 'consolidated' | 'non_consolidated';
 type NumericField = Exclude<keyof FilingFinancials, 'financials_basis'>;
 
-// TODO: 要素IDは実CSV採取後に網羅を検証する（特に営業利益は業種別様式で揺れる。未取得ならnullになる）
-const ELEMENT_TO_FIELD: Record<string, NumericField> = {
-  'jpcrp_cor:NetSalesSummaryOfBusinessResults': 'net_sales',
-  'jpcrp_cor:OperatingIncomeLossSummaryOfBusinessResults': 'operating_income',
-  'jpcrp_cor:OrdinaryIncomeLossSummaryOfBusinessResults': 'ordinary_income',
-  'jpcrp_cor:ProfitLossAttributableToOwnersOfParentSummaryOfBusinessResults': 'net_income',
-  'jpcrp_cor:TotalAssetsSummaryOfBusinessResults': 'total_assets',
-  'jpcrp_cor:NetAssetsSummaryOfBusinessResults': 'net_assets',
-  'jpcrp_cor:NumberOfEmployees': 'number_of_employees',
+/** 当期のcontextId（完全一致のみ採用。Member付きセグメント文脈を除外するため） */
+const CONTEXT_BASIS: Record<string, Basis> = {
+  CurrentYearDuration: 'consolidated',
+  CurrentYearInstant: 'consolidated',
+  CurrentYearDuration_NonConsolidatedMember: 'non_consolidated',
+  CurrentYearInstant_NonConsolidatedMember: 'non_consolidated',
 };
 
-/** 単位正規化: 円系はJPYの生値へ、人・pureはそのまま。未知の単位は採用しない（推測禁止） */
-const UNIT_MULTIPLIER: Record<string, number> = {
+interface FieldSpec {
+  /** 優先順の要素ID候補。最初に値が取れた候補を採用 */
+  candidates: string[];
+  kind: 'monetary' | 'count';
+}
+
+// TODO: 候補は実CSV 2件（JGAAP個別・IFRS連結保険）での検証に基づく。業種別様式
+// （銀行・証券等の営業収益系）はカバレッジ拡大時に追加する。未知の様式はnullに落ちる（安全側）。
+const FIELD_SPECS: Record<NumericField, FieldSpec> = {
+  net_sales: {
+    candidates: [
+      'jpcrp_cor:NetSalesSummaryOfBusinessResults',
+      'jpcrp_cor:RevenueIFRSSummaryOfBusinessResults',
+      'jpcrp_cor:OperatingRevenue1SummaryOfBusinessResults',
+    ],
+    kind: 'monetary',
+  },
+  operating_income: {
+    candidates: [
+      'jpcrp_cor:OperatingIncomeLossSummaryOfBusinessResults',
+      'jpcrp_cor:OperatingProfitLossIFRSSummaryOfBusinessResults',
+      'jppfs_cor:OperatingIncome',
+    ],
+    kind: 'monetary',
+  },
+  ordinary_income: {
+    candidates: ['jpcrp_cor:OrdinaryIncomeLossSummaryOfBusinessResults'],
+    kind: 'monetary',
+  },
+  net_income: {
+    candidates: [
+      'jpcrp_cor:ProfitLossAttributableToOwnersOfParentSummaryOfBusinessResults',
+      'jpcrp_cor:ProfitLossAttributableToOwnersOfParentIFRSSummaryOfBusinessResults',
+      'jpcrp_cor:NetIncomeLossSummaryOfBusinessResults',
+    ],
+    kind: 'monetary',
+  },
+  total_assets: {
+    candidates: [
+      'jpcrp_cor:TotalAssetsSummaryOfBusinessResults',
+      'jpcrp_cor:TotalAssetsIFRSSummaryOfBusinessResults',
+    ],
+    kind: 'monetary',
+  },
+  net_assets: {
+    candidates: [
+      'jpcrp_cor:NetAssetsSummaryOfBusinessResults',
+      'jpcrp_cor:TotalEquityIFRSSummaryOfBusinessResults',
+      'jpcrp_cor:EquityAttributableToOwnersOfParentIFRSSummaryOfBusinessResults',
+    ],
+    kind: 'monetary',
+  },
+  number_of_employees: {
+    candidates: ['jpcrp_cor:NumberOfEmployees'],
+    kind: 'count',
+  },
+};
+
+/** 円系単位はJPY生値へ正規化。人数系は単位列が空のことがある（実データ確認済み） */
+const MONETARY_MULTIPLIER: Record<string, number> = {
   円: 1,
   千円: 1_000,
   百万円: 1_000_000,
-  人: 1,
-  '－': 1,
-  pure: 1,
 };
+const COUNT_UNITS = new Set(['', '人', '名', '－', 'pure']);
+
+function toNumber(row: EdinetCsvRow, kind: FieldSpec['kind']): number | null {
+  if (kind === 'monetary') {
+    const multiplier = MONETARY_MULTIPLIER[row.unit];
+    if (multiplier === undefined) return null;
+    const value = parseJpNumber(row.value);
+    return value === null ? null : value * multiplier;
+  }
+  if (!COUNT_UNITS.has(row.unit)) return null;
+  return parseJpNumber(row.value);
+}
 
 export function emptyFinancials(): FilingFinancials {
   return {
@@ -57,39 +130,59 @@ export function emptyFinancials(): FilingFinancials {
 
 export function extractFinancials(rows: EdinetCsvRow[]): FilingFinancials {
   const result = emptyFinancials();
-  const pickedBasis: Partial<Record<NumericField, 'consolidated' | 'non_consolidated'>> = {};
 
-  for (const row of rows) {
-    const field = ELEMENT_TO_FIELD[row.elementId];
-    if (field === undefined) continue;
-    if (row.relativeFiscalYear !== '当期') continue;
-
-    const basis =
-      row.consolidatedOrNot === '連結'
-        ? 'consolidated'
-        : row.consolidatedOrNot === '個別'
-          ? 'non_consolidated'
-          : null;
-    if (basis === null) continue;
-
-    // 連結を優先。既に連結値を採用済みのフィールドは個別で上書きしない
-    if (pickedBasis[field] === 'consolidated') continue;
-    if (pickedBasis[field] === 'non_consolidated' && basis === 'non_consolidated') continue;
-
-    const multiplier = UNIT_MULTIPLIER[row.unit];
-    if (multiplier === undefined) continue;
-    const numeric = parseJpNumber(row.value);
-    if (numeric === null) continue;
-
-    result[field] = numeric * multiplier;
-    pickedBasis[field] = basis;
+  // 当期・完全一致contextの行だけを field候補ID → basis → 値 で索引する
+  const values = new Map<string, Partial<Record<Basis, number>>>();
+  const candidateKind = new Map<string, FieldSpec['kind']>();
+  for (const spec of Object.values(FIELD_SPECS)) {
+    for (const id of spec.candidates) candidateKind.set(id, spec.kind);
   }
 
-  const bases = Object.values(pickedBasis);
-  result.financials_basis = bases.includes('consolidated')
+  let hasConsolidated = false;
+  let hasNonConsolidated = false;
+  for (const row of rows) {
+    const basis = CONTEXT_BASIS[row.contextId];
+    if (basis === undefined) continue;
+    const kind = candidateKind.get(row.elementId);
+    if (kind === undefined) continue;
+    const value = toNumber(row, kind);
+    if (value === null) continue;
+
+    const byBasis = values.get(row.elementId) ?? {};
+    byBasis[basis] = value;
+    values.set(row.elementId, byBasis);
+    if (basis === 'consolidated') hasConsolidated = true;
+    else hasNonConsolidated = true;
+  }
+
+  // 基礎の混在を避ける: 連結値がひとつでもあれば連結で統一、無ければ個別
+  const basis: Basis | null = hasConsolidated
     ? 'consolidated'
-    : bases.includes('non_consolidated')
+    : hasNonConsolidated
       ? 'non_consolidated'
       : null;
+  if (basis === null) return result;
+
+  const fields: NumericField[] = [
+    'net_sales',
+    'operating_income',
+    'ordinary_income',
+    'net_income',
+    'total_assets',
+    'net_assets',
+    'number_of_employees',
+  ];
+  for (const field of fields) {
+    const spec = FIELD_SPECS[field];
+    if (spec === undefined) continue;
+    for (const id of spec.candidates) {
+      const value = values.get(id)?.[basis];
+      if (value !== undefined) {
+        result[field] = value;
+        break;
+      }
+    }
+  }
+  result.financials_basis = basis;
   return result;
 }

@@ -25,7 +25,7 @@ const ZERO_STATS: HttpStats = { requests: 0, failures: 0, rateLimitHits: 0, retr
 
 function fixtureListResult(date: string): EdinetListResult {
   const parsed = edinetDocumentListSchema.parse(
-    loadJsonFixture(fixturesDir, 'documents.2026-06-30.spec-based.json'),
+    loadJsonFixture(fixturesDir, 'documents.2026-06-30.json'),
   );
   return {
     documents: parsed.results ?? [],
@@ -42,7 +42,14 @@ function emptyListResult(date: string): EdinetListResult {
   };
 }
 
-const csvZip = loadBinaryFixture(fixturesDir, 'document.S100XXA1.csv.spec-based.zip');
+const yizcZip = loadBinaryFixture(fixturesDir, 'document.S100YIZC.csv.trimmed.zip');
+const zipByDocId: Record<string, Uint8Array> = {
+  S100YNCJ: loadBinaryFixture(fixturesDir, 'document.S100YNCJ.csv.trimmed.zip'),
+  S100YIZC: yizcZip,
+};
+// ファンド等のCSVは未採取のため、スタブでは個別提出者のzipで代用する
+const csvZip = yizcZip;
+const fetchZip = async (docId: string) => zipByDocId[docId] ?? csvZip;
 
 function makeDeps(client: EdinetClientLike) {
   const pushed: Record<string, unknown>[] = [];
@@ -72,7 +79,7 @@ function makeDeps(client: EdinetClientLike) {
 function fixtureClient(): EdinetClientLike {
   return {
     listDocuments: async (date) => fixtureListResult(date),
-    fetchDocument: async () => csvZip,
+    fetchDocument: async (docId) => fetchZip(docId),
     getHttpStats: () => ZERO_STATS,
   };
 }
@@ -84,9 +91,9 @@ describe('runEdinetFilings', () => {
       { date_from: '2026-06-30', date_to: '2026-06-30' },
       deps,
     );
-    expect(summary.records_pushed).toBe(3);
+    expect(summary.records_pushed).toBe(4);
     expect(summary.record_errors).toBe(0);
-    expect(charge).toHaveBeenCalledTimes(3);
+    expect(charge).toHaveBeenCalledTimes(4);
     expect(charge).toHaveBeenCalledWith({ eventName: 'record-basic', count: 1 });
     expectGolden(goldenDir, 'run.documents.2026-06-30.json', pushed);
   });
@@ -94,11 +101,11 @@ describe('runEdinetFilings', () => {
   it('sec_codes・doc_typesでフィルタする', async () => {
     const { deps, pushed } = makeDeps(fixtureClient());
     const summary = await runEdinetFilings(
-      { date_from: '2026-06-30', date_to: '2026-06-30', sec_codes: ['99840'] },
+      { date_from: '2026-06-30', date_to: '2026-06-30', sec_codes: ['87250'] },
       deps,
     );
     expect(summary.records_pushed).toBe(1);
-    expect(pushed[0]).toMatchObject({ doc_id: 'S100XXC3', sec_code: '99840' });
+    expect(pushed[0]).toMatchObject({ doc_id: 'S100YNCJ', sec_code: '87250' });
   });
 
   it('FR-C7: 日数上限で走査を打ち切り警告する（エラーにしない）', async () => {
@@ -143,7 +150,7 @@ describe('runEdinetFilings', () => {
     await expect(
       runEdinetFilings({ date_from: '2026-06-30', date_to: '2026-06-30' }, deps),
     ).rejects.toThrow(RunFailedError);
-    expect(pushed).toHaveLength(3);
+    expect(pushed).toHaveLength(4);
     expect(pushed.every((item) => typeof item._error === 'string')).toBe(true);
     expect(charge).not.toHaveBeenCalled();
     // 失敗率>20%でN-4アラート
@@ -179,7 +186,7 @@ describe('runEdinetFilings', () => {
       deps,
     );
     expect(summary.drift_detected).toBe(true);
-    expect(summary.records_pushed).toBe(3);
+    expect(summary.records_pushed).toBe(4);
     expect(alert).toHaveBeenCalledOnce();
   });
 
@@ -199,7 +206,7 @@ describe('runEdinetFilings', () => {
       { date_from: '2026-06-30', date_to: '2026-06-30', enrich: true },
       deps,
     );
-    expect(summary.records_pushed).toBe(3);
+    expect(summary.records_pushed).toBe(4);
     expect(warnings.some((w) => w.includes('not available yet'))).toBe(true);
   });
 });

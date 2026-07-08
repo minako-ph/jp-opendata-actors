@@ -46,7 +46,7 @@ One JSON item per filing — real output for an actual annual report:
 
 `financials` come from EDINET's official CSV output, normalized to raw JPY. Values that a filing does not report (industry-specific formats, funds) are `null` rather than guessed, and `financials_basis` tells you whether figures are consolidated or parent-only.
 
-With `enrich: true`, each filing also gets short English summaries (business overview, key risks, segment structure). Every generated field carries `confidence` and `method`, and proper nouns / figures are kept only if they verbatim-match the source text — otherwise they are set to `null` and flagged.
+**Coming soon.** With `enrich: true`, each filing will also get short English summaries (business overview, key risks, segment structure). Every generated field carries `confidence` and `method`, and proper nouns / figures are kept only if they verbatim-match the source text — otherwise they are set to `null` and flagged. The current version returns basic records only and never charges the enriched event.
 
 ## How to use
 

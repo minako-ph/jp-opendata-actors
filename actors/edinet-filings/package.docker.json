@@ -4,6 +4,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "apify": "^3.4.0"
+    "apify": "3.7.2"
   }
 }

@@ -1,5 +1,6 @@
 # apify push前にローカルで `pnpm --filter @jp-opendata/actor-edinet-filings build` を実行し
 # dist/main.js（workspaceパッケージをバンドル済み・apifyのみexternal）を生成しておくこと。
+# package.docker.jsonのapifyは完全固定。workspace側のapify更新時に手で同じ値へ揃えること（F-5）。
 FROM apify/actor-node:22
 
 COPY package.docker.json ./package.json

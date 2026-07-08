@@ -4,7 +4,7 @@ import { EDINET_DOC_TYPE, type EdinetDocumentResult } from '@jp-opendata/gov-cli
 /**
  * EDINET書類メタ → basicアイテム変換（FR-1 / FR-C1 / FR-C2）。
  * snake_caseの英語フィールドを正とし、日本語原文は *_ja で併記する。
- * 主要財務値（CSV type=5由来）は Phase 1 で追加する（TODO）。
+ * financialsは run.ts で extractFinancials の結果を合成する。
  */
 
 export const EDINET_SCHEMA_VERSION = '0.1.0';

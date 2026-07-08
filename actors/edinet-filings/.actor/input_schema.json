@@ -51,7 +51,7 @@
     "enrich": {
       "title": "LLM-enriched English summaries",
       "type": "boolean",
-      "description": "Add short English summaries (business overview, key risks, segments) per filing. Charged as a separate per-record event — see Pricing in the README.",
+      "description": "Add short English summaries (business overview, key risks, segments) per filing. Charged as a separate per-record event — see Pricing in the README. Coming soon — this version returns basic records only and never charges the enriched event.",
       "default": false
     }
   },

@@ -1,8 +1,7 @@
 packages:
   - packages/*
   - actors/*
-# pnpm 11.10ではallowBuildsが正式キー（onlyBuiltDependenciesは旧pnpm用。レビューF-6は実挙動により本形へ調整）
+# pnpm 11.10ではallowBuildsが正式キー（approve-buildsコマンドが生成する形式）。
+# onlyBuiltDependenciesはpnpm 11では無視されIGNORED_BUILDSになるため使用しない（レビューF-6は撤回）。
 allowBuilds:
   esbuild: true
-onlyBuiltDependencies:
-  - esbuild

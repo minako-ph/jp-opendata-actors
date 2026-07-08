@@ -66,11 +66,11 @@ With `enrich: true`, each filing also gets an `enriched` object with short **qua
 
 Pay-per-event, fully transparent:
 
-| Event                    | Price                                                   |
-| ------------------------ | ------------------------------------------------------- |
-| Actor start              | $0.02                                                   |
-| Filing record (basic)    | $0.005                                                  |
-| Filing record (enriched) | $0.0XX — finalized from measured LLM cost before launch |
+| Event                    | Price                                     |
+| ------------------------ | ----------------------------------------- |
+| Actor start              | $0.02                                     |
+| Filing record (basic)    | $0.005                                    |
+| Filing record (enriched) | $0.079 — finalized from measured LLM cost |
 
 Free allowance: **the first 3 documents of every run are free** — enough to evaluate the output, not enough to run a business on. If your run hits the maximum charge limit you set, the Actor stops gracefully and keeps the partial results.
 

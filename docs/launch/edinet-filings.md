@@ -23,6 +23,6 @@
 
 1. ~~Actor main実装~~ **済**（2026-07-07: 日ループ・FR-C7/C8・billing・N-4集計・財務値CSV(type=5)パース）
 2. ~~実応答fixture採取→golden差し替え＋財務値要素IDマップ検証~~ **済**（2026-07-08: 実データで抽出仕様を確定、fixture/golden実データ化。goldenのdiffレビューは事業主）
-3. ~~enrich（LLM英文サマリ）の扱いを決める~~ **(a)で解消済み（2026-07-08・Phase 1b）**: 同期Messages API＋tool use（emit_summary）＋prompt caching、数値禁止の定性サマリ＋数字列照合（フラグのみ）、LLM失敗はbasicフォールバック。**残作業**: ①事業主が `scripts/live-enrich.ts` で平均原価を実測 → ②record-enriched単価を確定（85%マージン＝avg/0.15） → ③READMEのPricing実額反映（`$0.0XX`プレースホルダを差し替え）→再push → ④コンソールのPPEに同額設定
+3. ~~enrich（LLM英文サマリ）の扱いを決める~~ **(a)で解消済み（2026-07-08・Phase 1b）**: 同期Messages API＋tool use（emit_summary）＋prompt caching、数値禁止の定性サマリ＋数字列照合（フラグのみ）、LLM失敗はbasicフォールバック。残作業の消化状況: ~~①平均原価の実測~~ **済**（2026-07-08・10件 avg $0.0048/doc） → ~~②単価確定~~ **済＝$0.079**（実効原価$0.012〜0.017想定＋価格変更の非対称性を織り込んだ高め始値。docs/decisions.md参照） → ~~③READMEのPricing実額反映→再push~~ **済**（$0.079） → **④コンソールのPPEに$0.079を設定（残・人間作業）**
 4. デプロイ手順: `pnpm --filter @jp-opendata/actor-edinet-filings build` → `apify push`（.actor/Dockerfileがdist/main.jsを使用。手動。CIはbundle生成の成功までを担保・R2-4）
 5. **Apify Consoleのbilling & payment details（payout先）を完了する**（収益化ウィザードの前提・人間作業・R2-9）

@@ -1,5 +1,7 @@
 # decisions.md — 実装中の判断ログ（1行/件、新しいものを上に）
 
+- 2026-07-08 enriched単価$0.079確定（実測avg $0.0048/doc・10件・照合フラグ0。有料利用の大型有報偏重で実効原価$0.012〜0.017想定＋値下げ即時/値上げ14日の非対称性から高め始値。実運用avgが$0.005近辺なら$0.049へ値下げ検討）
+
 - 2026-07-08 レビューF-6を撤回: pnpm 11.10実測で`approve-builds`は`allowBuilds`（マップ形式）を生成し`onlyBuiltDependencies`は無視される（柱3のCIでERR_PNPM_IGNORED_BUILDS実発生→allowBuildsで解消）。pnpm-workspace.yamlはallowBuilds単独に整理。機能影響ゼロ（esbuildはoptionalDependenciesのバイナリで動作）。
 
 - 2026-07-08 Phase 1b（docs/tasks-phase1b.md準拠に改修）: enrichは同期API＋caching、**数値禁止プロンプト＋数字列照合（要約文はフラグのみ・null化しない）**、出力は`enriched`ネスト（model/prompt_version付き）、原文はtextblocks.ts（business3000/risks6000/segments3000字・truncatedフラグ）、原価集計と推奨単価ログ（avg/0.15）。fixtureにTextBlock行を追加（保存済み生zipから・追加APIコールなし）。ゲート3を(a)で解消、実測10件 avg$0.0048/doc→推奨$0.0320、**単価確定は事業主タスク**（launch①〜④）。

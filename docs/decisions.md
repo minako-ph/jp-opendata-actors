@@ -1,5 +1,7 @@
 # decisions.md — 実装中の判断ログ（1行/件、新しいものを上に）
 
+- 2026-07-08 柱3 R3-3ゲート(G1)対応で gov-clients に houjin(/4/num・/4/name)・gbizinfo(v2 基本情報/補助金/調達)クライアントを実装。houjinは XML(fast-xml-parser・isArray:corporation で単一/複数/0件を吸収)＋CSV(Shift_JIS=iconv-lite/Unicode=UTF-8)を共通Corporation30項目へ正規化、appIdはコンストラクタ受領でpublicUrl/エラーに漏らさない（F-1維持）。gbizinfoはヘッダ認証・末尾スラッシュ除去(500回避)・値なし"Null"文字列をstripNullStringsでundefined化(0は保全)。**procurementはFR-6「補助金受給・国等との調達実績」が調達も要するためsubsidyと同型で追加**（スコープ外の他エンドポイントは非実装）。gbizinfo fixtureは公式OpenAPI準拠のspec-based（"Null"含む・実応答差し替え手順をREADMEに明記）。
+
 - 2026-07-08 enriched単価$0.079確定（実測avg $0.0048/doc・10件・照合フラグ0。有料利用の大型有報偏重で実効原価$0.012〜0.017想定＋値下げ即時/値上げ14日の非対称性から高め始値。実運用avgが$0.005近辺なら$0.049へ値下げ検討）
 
 - 2026-07-08 レビューF-6を撤回: pnpm 11.10実測で`approve-builds`は`allowBuilds`（マップ形式）を生成し`onlyBuiltDependencies`は無視される（柱3のCIでERR_PNPM_IGNORED_BUILDS実発生→allowBuildsで解消）。pnpm-workspace.yamlはallowBuilds単独に整理。機能影響ゼロ（esbuildはoptionalDependenciesのバイナリで動作）。

@@ -1,17 +1,12 @@
 import { Actor, log } from 'apify';
 import { createBilling } from '@jp-opendata/billing';
-import {
-  ENRICH_DEFAULT_MODEL,
-  createAnthropicMessagesInvoke,
-  enrichEdinetFiling,
-} from '@jp-opendata/enrich';
+import { ENRICH_DEFAULT_MODEL, createEnricher } from '@jp-opendata/enrich';
 import { EdinetClient } from '@jp-opendata/gov-clients';
-import { extractEdinetTextSections } from './enrich-input.js';
 import {
   RunFailedError,
   runEdinetFilings,
   type EdinetFilingsInput,
-  type Enricher,
+  type EnricherLike,
   type RunSummary,
 } from './run.js';
 
@@ -52,17 +47,16 @@ try {
   );
 
   // enrich: 同期Messages API（追補R2-1）。キー未設定でenrich=trueが来た場合はrun側で実行失敗にする
-  let enrich: Enricher | undefined;
+  let enricher: EnricherLike | undefined;
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const enrichModel = process.env.ENRICH_MODEL ?? ENRICH_DEFAULT_MODEL;
   if (anthropicKey) {
-    const invoke = createAnthropicMessagesInvoke({ apiKey: anthropicKey });
-    const model = process.env.ENRICH_MODEL ?? ENRICH_DEFAULT_MODEL;
-    const prices = {
-      usdPerMtokIn: Number(process.env.ENRICH_PRICE_IN ?? '1.00'),
-      usdPerMtokOut: Number(process.env.ENRICH_PRICE_OUT ?? '5.00'),
-    };
-    enrich = (rows) =>
-      enrichEdinetFiling({ sections: extractEdinetTextSections(rows), invoke, model, prices });
+    enricher = createEnricher({
+      apiKey: anthropicKey,
+      model: enrichModel,
+      priceInPerMtok: Number(process.env.ENRICH_PRICE_IN ?? '1.00'),
+      priceOutPerMtok: Number(process.env.ENRICH_PRICE_OUT ?? '5.00'),
+    });
   }
 
   await runEdinetFilings(input, {
@@ -76,7 +70,8 @@ try {
     },
     retrievedAt: new Date().toISOString(),
     alert: sendWebhookAlert,
-    ...(enrich ? { enrich } : {}),
+    enrichModel,
+    ...(enricher ? { enricher } : {}),
   });
   await Actor.exit();
 } catch (error) {

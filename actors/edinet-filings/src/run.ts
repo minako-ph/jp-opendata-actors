@@ -1,5 +1,5 @@
 import type { Billing } from '@jp-opendata/billing';
-import type { EdinetEnrichOutcome } from '@jp-opendata/enrich';
+import { EDINET_SUMMARY_PROMPT_VERSION } from '@jp-opendata/enrich';
 import {
   EdinetApiError,
   RateLimitAbortError,
@@ -9,6 +9,7 @@ import {
 } from '@jp-opendata/gov-clients';
 import type { HttpStats } from '@jp-opendata/gov-clients';
 import { extractFinancials, emptyFinancials } from './financials.js';
+import { extractTextBlocks } from './textblocks.js';
 import { toBasicItem } from './transform.js';
 
 /**
@@ -56,19 +57,36 @@ export interface RunSummary {
   /** ユーザー設定の課金上限に到達し、部分結果でgraceful終了した（R2-6。エラーではない） */
   charge_limit_reached: boolean;
   /** enrichに成功しenriched課金したレコード数 */
-  records_enriched: number;
+  enrich_records: number;
   /** LLM失敗によりbasicへフォールバックした数（FR-C8。enriched課金なし） */
   enrich_failures: number;
-  enrich_input_tokens: number;
-  enrich_output_tokens: number;
-  /** tokens×ENRICH_PRICE_*の概算原価合計（USD）。R2-2の単価確定の入力 */
-  enrich_cost_usd: number;
+  /** 原文3節がすべて無くenrichをスキップした数（ファンド等。課金なし） */
+  enrich_skipped_no_text: number;
+  /** 概算原価合計（USD）。R2-2の単価確定の入力 */
+  enrich_cost_usd_total: number;
   /** enrich成功1件あたりの平均原価（USD）。実行終端で算出 */
-  enrich_avg_cost_usd: number;
+  enrich_cost_usd_avg: number;
 }
 
-/** enrich注入点: 既取得CSVの行からLLMサマリを生成する（実体はmain.tsで合成） */
-export type Enricher = (rows: EdinetCsvRow[]) => Promise<EdinetEnrichOutcome>;
+/**
+ * enricher注入点（Phase 1b Step 3。インターフェースはactor側に定義し、実装は
+ * packages/enrichのcreateEnricherをmain.tsで注入する）
+ */
+export interface EnrichUsageLike {
+  inputTokens: number;
+  cachedInputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+}
+export interface EnrichResultLike {
+  fields: Record<string, unknown>;
+  usage: EnrichUsageLike;
+}
+export type EnricherLike = (sections: {
+  business: string | null;
+  risks: string | null;
+  segments: string | null;
+}) => Promise<EnrichResultLike>;
 
 export interface RunDeps {
   client: EdinetClientLike;
@@ -80,7 +98,9 @@ export interface RunDeps {
   /** N-4アラート送信（未設定ならログのみの運用） */
   alert?: (summary: RunSummary) => Promise<void>;
   /** enrich=true時に使うLLMサマリ生成（未設定でenrich要求されたら実行失敗＝設定不備） */
-  enrich?: Enricher;
+  enricher?: EnricherLike;
+  /** enrichedアイテムに記録するモデル名（main.tsのENRICH_MODELと一致させる） */
+  enrichModel?: string;
   /** テスト用の上限上書き */
   maxListDays?: number;
   maxDocuments?: number;
@@ -126,10 +146,9 @@ export async function runEdinetFilings(
   const maxDays = deps.maxListDays ?? MAX_LIST_DAYS;
   const maxDocuments = deps.maxDocuments ?? MAX_DOCUMENTS;
 
-  if (input.enrich && deps.enrich === undefined) {
-    throw new RunFailedError(
-      'enrich=true requires LLM configuration (ANTHROPIC_API_KEY). The Actor is misconfigured — contact the developer.',
-    );
+  if (input.enrich && deps.enricher === undefined) {
+    // 黙ってbasicに落とさない（課金約束との不整合防止。Phase 1b Step 3-1）
+    throw new RunFailedError('ANTHROPIC_API_KEY is not set (required when enrich=true).');
   }
 
   const docTypes = new Set(input.doc_types?.length ? input.doc_types : DEFAULT_DOC_TYPES);
@@ -159,12 +178,11 @@ export async function runEdinetFilings(
     rate_limit_hits: 0,
     aborted_by_rate_limit: false,
     charge_limit_reached: false,
-    records_enriched: 0,
+    enrich_records: 0,
     enrich_failures: 0,
-    enrich_input_tokens: 0,
-    enrich_output_tokens: 0,
-    enrich_cost_usd: 0,
-    enrich_avg_cost_usd: 0,
+    enrich_skipped_no_text: 0,
+    enrich_cost_usd_total: 0,
+    enrich_cost_usd_avg: 0,
   };
 
   try {
@@ -219,37 +237,47 @@ export async function runEdinetFilings(
             : [];
         const financials = rows.length > 0 ? extractFinancials(rows) : emptyFinancials();
 
-        // enrich: LLM失敗は該当docをbasicのみで出力して継続（FR-C8。enriched課金なし）
-        let enrichOutcome: EdinetEnrichOutcome | null = null;
-        if (input.enrich && deps.enrich) {
-          try {
-            const candidate = await deps.enrich(rows);
-            if (candidate.invoked) {
-              enrichOutcome = candidate;
-              summary.enrich_input_tokens += candidate.usage.inputTokens;
-              summary.enrich_output_tokens += candidate.usage.outputTokens;
-              summary.enrich_cost_usd += candidate.usage.costUsd;
+        // enrich（Phase 1b Step 3-2）: enrich結果を待ってから1回だけpushする（二重出力にしない）。
+        // LLM失敗は該当docをbasicのみ（enriched:null）で出力して継続（FR-C8。enriched課金なし）
+        let enriched: Record<string, unknown> | null = null;
+        if (input.enrich && deps.enricher) {
+          const blocks = extractTextBlocks(rows);
+          if (blocks.business === null && blocks.risks === null && blocks.segments === null) {
+            // 原文なし（ファンド等）→ enrichedはnullのまま・課金なし
+            summary.enrich_skipped_no_text++;
+          } else {
+            try {
+              const result = await deps.enricher({
+                business: blocks.business,
+                risks: blocks.risks,
+                segments: blocks.segments,
+              });
+              enriched = {
+                ...result.fields,
+                model: deps.enrichModel ?? null,
+                prompt_version: EDINET_SUMMARY_PROMPT_VERSION,
+              };
+              summary.enrich_cost_usd_total += result.usage.costUsd;
+            } catch (error) {
+              summary.enrich_failures++;
+              // エラーメッセージにキー・原文を含めない（F-1と同思想）
+              deps.log.warning(
+                `Enrichment failed for ${doc.docID}; falling back to basic: ${String(error).slice(0, 200)}`,
+              );
             }
-          } catch (error) {
-            summary.enrich_failures++;
-            deps.log.warning(
-              `Enrichment failed for ${doc.docID}; falling back to basic: ${String(error)}`,
-            );
           }
         }
 
         await deps.pushData(
-          enrichOutcome === null
-            ? { ...basic, financials }
-            : { ...basic, financials, ...enrichOutcome.enrichment },
+          input.enrich ? { ...basic, financials, enriched } : { ...basic, financials },
         );
         const outcome = await deps.billing.charge('record-basic');
         summary.records_pushed++;
         let limitReached = outcome.limitReached;
-        if (enrichOutcome !== null) {
+        if (enriched !== null) {
           // 成功レコードのみenriched課金（freeAllowanceは適用しない＝main.tsで設定しない）
           const enrichedCharge = await deps.billing.charge('record-enriched');
-          summary.records_enriched++;
+          summary.enrich_records++;
           limitReached = limitReached || enrichedCharge.limitReached;
         }
         if (limitReached) {
@@ -298,15 +326,16 @@ async function finalizeSummary(
   summary.record_failure_rate = processed === 0 ? 0 : summary.record_errors / processed;
   summary.rate_limit_hits = deps.client.getHttpStats().rateLimitHits;
 
-  // R2-2: enriched単価確定の入力として平均原価を実行終端でログ出力する
-  summary.enrich_cost_usd = Number(summary.enrich_cost_usd.toFixed(6));
-  summary.enrich_avg_cost_usd =
-    summary.records_enriched === 0
+  // R2-2: enriched単価確定の入力として平均原価と85%マージン推奨単価（avg/0.15）をログ出力
+  summary.enrich_cost_usd_total = Number(summary.enrich_cost_usd_total.toFixed(6));
+  summary.enrich_cost_usd_avg =
+    summary.enrich_records === 0
       ? 0
-      : Number((summary.enrich_cost_usd / summary.records_enriched).toFixed(6));
-  if (summary.records_enriched > 0) {
+      : Number((summary.enrich_cost_usd_total / summary.enrich_records).toFixed(6));
+  if (summary.enrich_records > 0) {
+    const recommended = (summary.enrich_cost_usd_avg / 0.15).toFixed(4);
     deps.log.info(
-      `Enrichment cost: total $${summary.enrich_cost_usd} for ${summary.records_enriched} records (avg $${summary.enrich_avg_cost_usd}/record, in=${summary.enrich_input_tokens} out=${summary.enrich_output_tokens} tokens)`,
+      `Enrichment cost: total $${summary.enrich_cost_usd_total} for ${summary.enrich_records} records (avg $${summary.enrich_cost_usd_avg}/record → recommended record-enriched price for 85% margin: $${recommended})`,
     );
   }
 

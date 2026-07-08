@@ -13,7 +13,7 @@ import {
   RunFailedError,
   runEdinetFilings,
   type EdinetClientLike,
-  type Enricher,
+  type EnricherLike,
   type RunLogger,
 } from '../src/run.js';
 
@@ -216,76 +216,89 @@ describe('runEdinetFilings', () => {
     ).rejects.toThrow(/on or before/);
   });
 
-  it('enrich成功: enriched項目を出力しrecord-enrichedを課金、原価を集計する', async () => {
+  it('enrich成功: enrichedネスト（model/prompt_version付き）を出力しrecord-enriched課金・原価集計', async () => {
     const { deps, pushed, charge } = makeDeps(fixtureClient());
-    const enrich: Enricher = async () => ({
-      invoked: true,
-      enrichment: {
-        business_overview_en: { value: 'A broadcaster.', confidence: 0.9, method: 'llm' },
-        key_risks_en: { value: 'Ad revenue decline.', confidence: 0.8, method: 'llm' },
-        segments_en: { value: null, confidence: 0.5, method: 'llm' },
-      },
-      usage: { inputTokens: 1000, outputTokens: 200, costUsd: 0.002 },
-    });
+    const enricher: EnricherLike = async (sections) => {
+      expect(sections.business ?? sections.risks ?? sections.segments).not.toBeNull();
+      return {
+        fields: {
+          business_overview_en: { value: 'A broadcaster.', confidence: 0.9, method: 'llm' },
+          key_risks_en: { value: 'Ad revenue decline.', confidence: 0.8, method: 'llm' },
+          segments_en: { value: null, confidence: 0.5, method: 'llm' },
+        },
+        usage: { inputTokens: 1000, cachedInputTokens: 0, outputTokens: 200, costUsd: 0.002 },
+      };
+    };
     const summary = await runEdinetFilings(
       { date_from: '2026-06-30', date_to: '2026-06-30', enrich: true },
-      { ...deps, enrich },
+      { ...deps, enricher, enrichModel: 'test-model' },
     );
     expect(summary.records_pushed).toBe(4);
-    expect(summary.records_enriched).toBe(4);
+    expect(summary.enrich_records).toBe(4);
     expect(summary.enrich_failures).toBe(0);
-    expect(summary.enrich_cost_usd).toBeCloseTo(0.008, 9);
-    expect(summary.enrich_avg_cost_usd).toBeCloseTo(0.002, 9);
+    expect(summary.enrich_skipped_no_text).toBe(0);
+    expect(summary.enrich_cost_usd_total).toBeCloseTo(0.008, 9);
+    expect(summary.enrich_cost_usd_avg).toBeCloseTo(0.002, 9);
     expect(pushed[0]).toMatchObject({
-      business_overview_en: { value: 'A broadcaster.', confidence: 0.9, method: 'llm' },
+      enriched: {
+        business_overview_en: { value: 'A broadcaster.', confidence: 0.9, method: 'llm' },
+        model: 'test-model',
+        prompt_version: 'edinet-summary-v1',
+      },
     });
     expect(charge).toHaveBeenCalledWith({ eventName: 'record-basic', count: 1 });
     expect(charge).toHaveBeenCalledWith({ eventName: 'record-enriched', count: 1 });
     expect(charge).toHaveBeenCalledTimes(8); // basic×4 + enriched×4
   });
 
-  it('enrich失敗（LLM例外）: 該当docはbasicのみで継続し、enriched課金なし（FR-C8）', async () => {
+  it('enrich失敗（LLM例外）: 該当docはbasic（enriched:null）で継続・enriched課金なし・実行成功（FR-C8）', async () => {
     const { deps, pushed, charge } = makeDeps(fixtureClient());
-    const enrich: Enricher = async () => {
+    const enricher: EnricherLike = async () => {
       throw new Error('llm boom');
     };
     const summary = await runEdinetFilings(
       { date_from: '2026-06-30', date_to: '2026-06-30', enrich: true },
-      { ...deps, enrich },
+      { ...deps, enricher },
     );
     expect(summary.records_pushed).toBe(4);
-    expect(summary.records_enriched).toBe(0);
+    expect(summary.enrich_records).toBe(0);
     expect(summary.enrich_failures).toBe(4);
-    expect(pushed.every((item) => !('business_overview_en' in item) && !('_error' in item))).toBe(
-      true,
-    );
+    expect(pushed.every((item) => item.enriched === null && !('_error' in item))).toBe(true);
     expect(charge).toHaveBeenCalledTimes(4); // basicのみ
     expect(charge).not.toHaveBeenCalledWith({ eventName: 'record-enriched', count: 1 });
   });
 
-  it('enrich未invoked（原文なし）はenriched課金しない', async () => {
-    const { deps, charge } = makeDeps(fixtureClient());
-    const enrich: Enricher = async () => ({
-      invoked: false,
-      enrichment: {
-        business_overview_en: { value: null, confidence: 0, method: 'llm' },
-        key_risks_en: { value: null, confidence: 0, method: 'llm' },
-        segments_en: { value: null, confidence: 0, method: 'llm' },
-      },
-      usage: { inputTokens: 0, outputTokens: 0, costUsd: 0 },
-    });
+  it('原文3節なし（ファンド等）: enricherを呼ばずスキップ・課金なし', async () => {
+    // 空zip → rows=[] → TextBlockなし
+    const emptyZip = new Uint8Array([0x50, 0x4b, 0x05, 0x06, ...new Array(18).fill(0)]);
+    const client: EdinetClientLike = {
+      listDocuments: async (date) => fixtureListResult(date),
+      fetchDocument: async () => emptyZip,
+      getHttpStats: () => ZERO_STATS,
+    };
+    const { deps, pushed, charge } = makeDeps(client);
+    const enricher = vi.fn<EnricherLike>();
     const summary = await runEdinetFilings(
       { date_from: '2026-06-30', date_to: '2026-06-30', enrich: true },
-      { ...deps, enrich },
+      { ...deps, enricher },
     );
-    expect(summary.records_enriched).toBe(0);
+    expect(enricher).not.toHaveBeenCalled();
+    expect(summary.enrich_skipped_no_text).toBe(4);
+    expect(summary.enrich_records).toBe(0);
+    expect(pushed.every((item) => item.enriched === null)).toBe(true);
     expect(charge).not.toHaveBeenCalledWith({ eventName: 'record-enriched', count: 1 });
   });
 
-  it('enrich=trueでenricher未設定なら実行失敗（設定不備）', async () => {
+  it('enrich=trueでenricher未設定なら実行失敗（黙ってbasicに落とさない）', async () => {
     const { deps } = makeDeps(fixtureClient());
     await expect(
       runEdinetFilings({ date_from: '2026-06-30', date_to: '2026-06-30', enrich: true }, deps),
-    ).rejects.toThrow(/ANTHROPIC_API_KEY/);
+    ).rejects.toThrow(/ANTHROPIC_API_KEY is not set/);
+  });
+
+  it('enrich=false時はアイテムにenrichedキー自体を含めない（basic golden不変）', async () => {
+    const { deps, pushed } = makeDeps(fixtureClient());
+    await runEdinetFilings({ date_from: '2026-06-30', date_to: '2026-06-30' }, deps);
+    expect(pushed.every((item) => !('enriched' in item))).toBe(true);
   });
 });

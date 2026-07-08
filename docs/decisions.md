@@ -1,5 +1,7 @@
 # decisions.md — 実装中の判断ログ（1行/件、新しいものを上に）
 
+- 2026-07-08 Phase 1b（docs/tasks-phase1b.md準拠に改修）: enrichは同期API＋caching、**数値禁止プロンプト＋数字列照合（要約文はフラグのみ・null化しない）**、出力は`enriched`ネスト（model/prompt_version付き）、原文はtextblocks.ts（business3000/risks6000/segments3000字・truncatedフラグ）、原価集計と推奨単価ログ（avg/0.15）。fixtureにTextBlock行を追加（保存済み生zipから・追加APIコールなし）。ゲート3を(a)で解消、実測10件 avg$0.0048/doc→推奨$0.0320、**単価確定は事業主タスク**（launch①〜④）。
+
 - 2026-07-08 enrich（FR-1 enriched）実装で公開ゲート3を(a)解消: 同期Messages API＋tool use＋temperature0＋prompt caching（R2-1）、入力は既取得CSVのTextBlock 3節（HTML除去・~8k字切詰め・追加APIコールなし）、N-9はLLMに原文termsを出させ英文中数値と共にverifyVerbatim（不一致はnull＋verification_failed）、LLM失敗はbasicフォールバック（FR-C8・enriched課金なし）、原価はサマリ集計＋終端平均ログ（R2-2入力）。実LLM確認: $0.0043/doc→$0.05でマージン約91%見込み。プロンプトはprompts/edinet-summary-v1.md正典＋埋め込み定数（同期テストで担保）。schema_version 0.2.0へ。
 
 - 2026-07-08 レビュー修正: F-1キー漏洩サニタイズ（redactUrlForErrorを両エラークラスのコンストラクタ内部で適用、回帰テスト2本追加）ほかF-2〜F-7対応（enrichにComing soon注記／陳腐化コメント2件／Dockerのapifyを3.7.2に完全固定／pnpm-workspace調整／launch文書にapify-default-dataset-item削除を明記）。F-6はpnpm 11.10が`allowBuilds`を正式キーとするため`onlyBuiltDependencies`併記の形に調整（installは警告なし）。

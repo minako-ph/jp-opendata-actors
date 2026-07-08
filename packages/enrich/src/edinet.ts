@@ -3,13 +3,14 @@ import { verifyVerbatim, type GeneratedField } from './verbatim.js';
 import { EDINET_SUMMARY_SYSTEM_PROMPT } from './prompt-edinet-summary-v1.js';
 
 /**
- * EDINETサマリenrichment（FR-1 enriched / 引継書§6 / 追補R2-1）。
- * 同期Messages API・temperature 0・tool useでJSONスキーマ固定。LLM呼び出しは
- * LlmInvoke注入点で抽象化し、テストではモック・実行時はAnthropicアダプタを渡す。
+ * EDINETサマリenrichment（FR-1 enriched / 追補R2-1 / Phase 1b Step 2）。
+ * 同期Messages API（Batch禁止）・temperature 0・tools+tool_choiceでJSONスキーマ固定
+ * （tool名 emit_summary）・systemプロンプトはprompt caching・max_tokens 1200。
  *
- * 品質規律（N-9）: LLMには要約が依拠した固有名詞・数値の「原文そのままの文字列」を
- * source_termsとして出力させ、要約英文中の数値トークンと合わせてverifyVerbatimで
- * 原文照合する。1つでも不一致ならそのフィールドをnull＋verification_failed にする。
+ * N-9運用: プロンプトで数値・金額の要約文への記載を禁止しているため、通常は生成文に
+ * 数字列が現れない（＝照合スキップ）。数字列が混入した場合は原文（3節連結）と
+ * verifyVerbatimで照合し、不一致なら**要約文はフラグのみ**（verification_failed: true、
+ * null化しない）。
  */
 
 export interface EdinetTextSections {
@@ -18,7 +19,8 @@ export interface EdinetTextSections {
   segments: string | null;
 }
 
-export interface LlmToolRequest {
+/** Anthropic SDK呼び出しの注入点（テストでモック差し替え） */
+export interface CreateMessageRequest {
   model: string;
   maxTokens: number;
   system: string;
@@ -30,35 +32,30 @@ export interface LlmToolRequest {
   };
 }
 
-export interface LlmToolResponse {
+export interface CreateMessageResponse {
   /** tool useのinput（スキーマ検証は呼び出し側で行う） */
-  input: unknown;
-  usage: { inputTokens: number; outputTokens: number };
+  toolInput: unknown;
+  usage: { inputTokens: number; cachedInputTokens: number; outputTokens: number };
 }
 
-export type LlmInvoke = (request: LlmToolRequest) => Promise<LlmToolResponse>;
+export type CreateMessage = (request: CreateMessageRequest) => Promise<CreateMessageResponse>;
 
 const SECTION_JSON_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['text', 'source_terms', 'confidence'],
+  required: ['text', 'confidence'],
   properties: {
     text: {
       type: ['string', 'null'],
-      description: '2-3 English sentences, or null when the section is NOT AVAILABLE.',
-    },
-    source_terms: {
-      type: 'array',
-      items: { type: 'string' },
       description:
-        'Every Japanese proper noun and figure the summary relies on, each an exact verbatim substring of the source.',
+        '2-3 English sentences with no figures, or null when the section is NOT AVAILABLE.',
     },
     confidence: { type: 'number', description: '0-1 confidence that the summary is faithful.' },
   },
 };
 
-export const EDINET_SUMMARY_TOOL: LlmToolRequest['tool'] = {
-  name: 'record_edinet_summaries',
+export const EDINET_SUMMARY_TOOL: CreateMessageRequest['tool'] = {
+  name: 'emit_summary',
   description: 'Record the English summaries of the EDINET filing sections.',
   inputSchema: {
     type: 'object',
@@ -74,7 +71,6 @@ export const EDINET_SUMMARY_TOOL: LlmToolRequest['tool'] = {
 
 const sectionOutputSchema = z.object({
   text: z.string().nullable(),
-  source_terms: z.array(z.string()),
   confidence: z.number().min(0).max(1),
 });
 
@@ -84,7 +80,7 @@ const summariesOutputSchema = z.object({
   segments: sectionOutputSchema,
 });
 
-export interface EdinetEnrichment extends Record<string, unknown> {
+export interface EnrichedFields extends Record<string, unknown> {
   business_overview_en: GeneratedField<string>;
   key_risks_en: GeneratedField<string>;
   segments_en: GeneratedField<string>;
@@ -92,35 +88,30 @@ export interface EdinetEnrichment extends Record<string, unknown> {
 
 export interface EnrichUsage {
   inputTokens: number;
+  cachedInputTokens: number;
   outputTokens: number;
-  /** tokens×ENRICH_PRICE_*で算出した概算原価（R2-2の単価確定の入力。cache割引は未考慮の保守値） */
+  /** 概算原価（USD）。cache読取は0.1×で近似（cache書込の1.25×は未考慮） */
   costUsd: number;
 }
 
-export interface EdinetEnrichOutcome {
-  /** LLMを実際に呼んだか（原文セクションが無い書類ではfalse＝enriched課金対象外） */
-  invoked: boolean;
-  enrichment: EdinetEnrichment;
+export interface EnrichResult {
+  fields: EnrichedFields;
   usage: EnrichUsage;
 }
 
-export interface EnrichPrices {
-  usdPerMtokIn: number;
-  usdPerMtokOut: number;
-}
+/** enrich=true時にActorが呼ぶ関数（3節すべてnullの書類はActor側でスキップする） */
+export type Enricher = (sections: EdinetTextSections) => Promise<EnrichResult>;
 
 export const ENRICH_DEFAULT_MODEL = 'claude-haiku-4-5';
 
-function nullField(confidence = 0): GeneratedField<string> {
-  return { value: null, confidence, method: 'llm' };
-}
-
-export function emptyEdinetEnrichment(): EdinetEnrichment {
-  return {
-    business_overview_en: nullField(),
-    key_risks_en: nullField(),
-    segments_en: nullField(),
-  };
+export interface CreateEnricherOptions {
+  model?: string;
+  /** createMessage未指定時に必須（実Anthropicクライアントを生成する） */
+  apiKey?: string;
+  priceInPerMtok: number;
+  priceOutPerMtok: number;
+  /** テスト用の注入点。省略時は@anthropic-ai/sdkの同期Messages API */
+  createMessage?: CreateMessage;
 }
 
 function sectionBlock(label: string, text: string | null): string {
@@ -135,76 +126,70 @@ export function buildEdinetSummaryUserText(sections: EdinetTextSections): string
   ].join('\n\n');
 }
 
-/** 英文サマリ中の数値トークン（桁区切り・小数を含む）。末尾の句読点は除く */
-function digitTokens(text: string): string[] {
-  return (text.match(/\d[\d,.]*/g) ?? []).map((t) => t.replace(/[.,]+$/, ''));
+/** 生成文中の数字列（半角/全角カンマ・小数を含む）。Phase 1b Step 2-3の指定regex */
+function digitRuns(text: string): string[] {
+  return text.match(/\d[\d,，.]*\d|\d/g) ?? [];
 }
 
-function verifySection(
+function toField(
   section: z.infer<typeof sectionOutputSchema>,
   sourceText: string,
 ): GeneratedField<string> {
   if (section.text === null) {
     return { value: null, confidence: section.confidence, method: 'llm' };
   }
-  const candidates = [...section.source_terms, ...digitTokens(section.text)];
-  const failed = candidates.some((candidate) => !verifyVerbatim(candidate, sourceText));
-  if (failed) {
-    return {
-      value: null,
-      confidence: section.confidence,
-      method: 'llm',
-      verification_failed: true,
-    };
-  }
-  return { value: section.text, confidence: section.confidence, method: 'llm' };
+  // 要約文はフラグのみ（null化しない）: 数字列が1つでも原文不一致ならverification_failed
+  const failed = digitRuns(section.text).some((run) => !verifyVerbatim(run, sourceText));
+  const field: GeneratedField<string> = {
+    value: section.text,
+    confidence: section.confidence,
+    method: 'llm',
+  };
+  return failed ? { ...field, verification_failed: true } : field;
 }
 
-export async function enrichEdinetFiling(options: {
-  sections: EdinetTextSections;
-  invoke: LlmInvoke;
-  prices: EnrichPrices;
-  model?: string;
-}): Promise<EdinetEnrichOutcome> {
-  const { sections } = options;
-  const sourceText = [sections.business, sections.risks, sections.segments]
-    .filter((text): text is string => text !== null && text !== '')
-    .join('\n');
+export function createEnricher(options: CreateEnricherOptions): Enricher {
+  const model = options.model ?? ENRICH_DEFAULT_MODEL;
+  let createMessage = options.createMessage;
 
-  if (sourceText === '') {
-    // 原文なし（ファンド等の別タクソノミ）→ LLMを呼ばず全null（推測禁止 N-9②）
+  return async (sections) => {
+    if (createMessage === undefined) {
+      if (!options.apiKey) {
+        throw new Error('createEnricher: apiKey is required when createMessage is not injected.');
+      }
+      // 遅延import相当: 実クライアントは初回呼び出し時に生成（テスト経路でSDKを触らない）
+      const { createAnthropicCreateMessage } = await import('./anthropic.js');
+      createMessage = createAnthropicCreateMessage({ apiKey: options.apiKey });
+    }
+
+    const sourceText = [sections.business, sections.risks, sections.segments]
+      .filter((text): text is string => text !== null && text !== '')
+      .join('\n');
+
+    const response = await createMessage({
+      model,
+      maxTokens: 1200,
+      system: EDINET_SUMMARY_SYSTEM_PROMPT,
+      userText: buildEdinetSummaryUserText(sections),
+      tool: EDINET_SUMMARY_TOOL,
+    });
+    const parsed = summariesOutputSchema.parse(response.toolInput);
+
+    const { inputTokens, cachedInputTokens, outputTokens } = response.usage;
+    // 原価式（近似）: in×P_in + cached_in×P_in×0.1 + out×P_out（USD/Mtok換算）
+    const costUsd =
+      (inputTokens * options.priceInPerMtok +
+        cachedInputTokens * options.priceInPerMtok * 0.1 +
+        outputTokens * options.priceOutPerMtok) /
+      1_000_000;
+
     return {
-      invoked: false,
-      enrichment: emptyEdinetEnrichment(),
-      usage: { inputTokens: 0, outputTokens: 0, costUsd: 0 },
+      fields: {
+        business_overview_en: toField(parsed.business_overview, sourceText),
+        key_risks_en: toField(parsed.key_risks, sourceText),
+        segments_en: toField(parsed.segments, sourceText),
+      },
+      usage: { inputTokens, cachedInputTokens, outputTokens, costUsd },
     };
-  }
-
-  const response = await options.invoke({
-    model: options.model ?? ENRICH_DEFAULT_MODEL,
-    maxTokens: 1024,
-    system: EDINET_SUMMARY_SYSTEM_PROMPT,
-    userText: buildEdinetSummaryUserText(sections),
-    tool: EDINET_SUMMARY_TOOL,
-  });
-  const parsed = summariesOutputSchema.parse(response.input);
-
-  const costUsd =
-    (response.usage.inputTokens * options.prices.usdPerMtokIn +
-      response.usage.outputTokens * options.prices.usdPerMtokOut) /
-    1_000_000;
-
-  return {
-    invoked: true,
-    enrichment: {
-      business_overview_en: verifySection(parsed.business_overview, sourceText),
-      key_risks_en: verifySection(parsed.key_risks, sourceText),
-      segments_en: verifySection(parsed.segments, sourceText),
-    },
-    usage: {
-      inputTokens: response.usage.inputTokens,
-      outputTokens: response.usage.outputTokens,
-      costUsd,
-    },
   };
 }

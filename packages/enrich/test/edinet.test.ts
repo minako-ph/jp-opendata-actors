@@ -1,109 +1,102 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  EDINET_SUMMARY_SYSTEM_PROMPT,
   EDINET_SUMMARY_TOOL,
   buildEdinetSummaryUserText,
-  enrichEdinetFiling,
+  createEnricher,
+  type CreateMessage,
   type EdinetTextSections,
-  type LlmInvoke,
-  type LlmToolResponse,
-} from '../src/edinet.js';
+} from '../src/index.js';
 
 const SECTIONS: EdinetTextSections = {
-  business: '当社は山口県で放送事業を営む。主要顧客は架空商事株式会社である。',
+  business: '当社は山口県で放送事業を営む。',
   risks: '広告収入の減少が業績に影響を与えるリスクがある。売上高は4,928,920,000円。',
   segments: '当社は放送事業の単一セグメントである。',
 };
 
-const PRICES = { usdPerMtokIn: 1, usdPerMtokOut: 5 };
+const PRICES = { priceInPerMtok: 1, priceOutPerMtok: 5 };
 
-function section(text: string | null, sourceTerms: string[] = [], confidence = 0.9) {
-  return { text, source_terms: sourceTerms, confidence };
+function section(text: string | null, confidence = 0.9) {
+  return { text, confidence };
 }
 
-function invokeReturning(input: unknown, usage = { inputTokens: 1000, outputTokens: 200 }) {
-  return vi.fn<LlmInvoke>().mockResolvedValue({ input, usage } satisfies LlmToolResponse);
+function createMessageReturning(
+  toolInput: unknown,
+  usage = { inputTokens: 1000, cachedInputTokens: 2000, outputTokens: 200 },
+) {
+  return vi.fn<CreateMessage>().mockResolvedValue({ toolInput, usage });
 }
 
-describe('enrichEdinetFiling', () => {
-  it('照合パス: source_termsと英文中の数値が原文一致なら値を保持し、原価を集計する', async () => {
-    const invoke = invokeReturning({
-      business_overview: section('The company runs a broadcasting business in Yamaguchi.', [
-        '放送事業',
-      ]),
-      key_risks: section('Net sales were 4,928,920,000 yen; ad revenue decline is a key risk.', [
-        '広告収入',
-      ]),
-      segments: section('The company operates in a single broadcasting segment.', []),
+describe('createEnricher', () => {
+  it('正常系: fieldsと原価（cache読取0.1×の近似式）を返し、呼び出し形が仕様どおり', async () => {
+    const createMessage = createMessageReturning({
+      business_overview: section('The company runs a broadcasting business.'),
+      key_risks: section('Ad revenue decline is a key risk.'),
+      segments: section(null, 0.5),
     });
+    const enricher = createEnricher({ ...PRICES, createMessage });
 
-    const result = await enrichEdinetFiling({ sections: SECTIONS, invoke, prices: PRICES });
-
-    expect(result.invoked).toBe(true);
-    expect(result.enrichment.business_overview_en).toEqual({
-      value: 'The company runs a broadcasting business in Yamaguchi.',
+    const result = await enricher(SECTIONS);
+    expect(result.fields.business_overview_en).toEqual({
+      value: 'The company runs a broadcasting business.',
       confidence: 0.9,
       method: 'llm',
     });
-    expect(result.enrichment.key_risks_en.value).toContain('4,928,920,000');
-    expect(result.enrichment.key_risks_en.verification_failed).toBeUndefined();
-    // 原価: 1000×$1/M + 200×$5/M = $0.002
-    expect(result.usage.costUsd).toBeCloseTo(0.002, 9);
-    // system/tool/temperature相当の呼び出し形も確認
-    expect(invoke).toHaveBeenCalledWith(
-      expect.objectContaining({
-        model: 'claude-haiku-4-5',
-        tool: EDINET_SUMMARY_TOOL,
-        userText: buildEdinetSummaryUserText(SECTIONS),
-      }),
-    );
+    expect(result.fields.segments_en.value).toBeNull();
+    // cost = 1000×$1/M + 2000×$1×0.1/M + 200×$5/M = $0.0022
+    expect(result.usage.costUsd).toBeCloseTo(0.0022, 9);
+    expect(result.usage.cachedInputTokens).toBe(2000);
+
+    expect(createMessage).toHaveBeenCalledWith({
+      model: 'claude-haiku-4-5',
+      maxTokens: 1200,
+      system: EDINET_SUMMARY_SYSTEM_PROMPT,
+      userText: buildEdinetSummaryUserText(SECTIONS),
+      tool: EDINET_SUMMARY_TOOL,
+    });
+    expect(EDINET_SUMMARY_TOOL.name).toBe('emit_summary');
   });
 
-  it('照合失敗（source_termsが原文に無い）: null化＋verification_failed（N-9）', async () => {
-    const invoke = invokeReturning({
-      business_overview: section('Summary based on a hallucinated term.', ['存在しない用語']),
+  it('数値混入で原文不一致 → 要約文はフラグのみ（値は残す・null化しない）', async () => {
+    const createMessage = createMessageReturning({
+      business_overview: section('Sales were approximately 4.9 billion yen.'),
       key_risks: section(null),
       segments: section(null),
     });
+    const enricher = createEnricher({ ...PRICES, createMessage });
 
-    const result = await enrichEdinetFiling({ sections: SECTIONS, invoke, prices: PRICES });
-    expect(result.enrichment.business_overview_en).toEqual({
-      value: null,
+    const result = await enricher(SECTIONS);
+    expect(result.fields.business_overview_en).toEqual({
+      value: 'Sales were approximately 4.9 billion yen.',
       confidence: 0.9,
       method: 'llm',
       verification_failed: true,
     });
   });
 
-  it('照合失敗（英文中の数値が原文に無い＝丸め）: null化＋verification_failed', async () => {
-    const invoke = invokeReturning({
+  it('数値が原文と逐語一致するならフラグなし', async () => {
+    const createMessage = createMessageReturning({
       business_overview: section(null),
-      key_risks: section('Net sales were approximately 4.9 billion yen.', []),
+      key_risks: section('Net sales were 4,928,920,000 yen.'),
       segments: section(null),
     });
+    const enricher = createEnricher({ ...PRICES, createMessage });
 
-    const result = await enrichEdinetFiling({ sections: SECTIONS, invoke, prices: PRICES });
-    expect(result.enrichment.key_risks_en.value).toBeNull();
-    expect(result.enrichment.key_risks_en.verification_failed).toBe(true);
+    const result = await enricher(SECTIONS);
+    expect(result.fields.key_risks_en.verification_failed).toBeUndefined();
+    expect(result.fields.key_risks_en.value).toContain('4,928,920,000');
   });
 
-  it('原文セクションが全て無い場合はLLMを呼ばず全null（invoked=false・課金対象外）', async () => {
-    const invoke = vi.fn<LlmInvoke>();
-    const result = await enrichEdinetFiling({
-      sections: { business: null, risks: null, segments: null },
-      invoke,
-      prices: PRICES,
-    });
-    expect(invoke).not.toHaveBeenCalled();
-    expect(result.invoked).toBe(false);
-    expect(result.usage.costUsd).toBe(0);
-    expect(result.enrichment.business_overview_en.value).toBeNull();
+  it('API例外はそのままthrow（フォールバックは呼び出し側の責務）', async () => {
+    const createMessage = vi.fn<CreateMessage>().mockRejectedValue(new Error('api boom'));
+    const enricher = createEnricher({ ...PRICES, createMessage });
+    await expect(enricher(SECTIONS)).rejects.toThrow('api boom');
   });
 
-  it('tool出力がスキーマ違反ならエラー（呼び出し側でbasicフォールバック）', async () => {
-    const invoke = invokeReturning({ unexpected: true });
-    await expect(
-      enrichEdinetFiling({ sections: SECTIONS, invoke, prices: PRICES }),
-    ).rejects.toThrow();
+  it('tool出力がスキーマ違反ならthrow', async () => {
+    const createMessage = createMessageReturning({ unexpected: true });
+    const enricher = createEnricher({ ...PRICES, createMessage });
+    await expect(enricher(SECTIONS)).rejects.toThrow();
   });
 
   it('NOT AVAILABLEなセクションはユーザーテキストで明示される', () => {

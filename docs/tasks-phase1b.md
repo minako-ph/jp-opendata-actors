@@ -7,8 +7,8 @@
 
 ## Step 0: 前提確認
 
-- [ ] `docs/review-2026-07-08.md` の**F-1〜F-7が対応済みか確認**。未対応ならenrichより先に全件対応する（特にF-1キー漏洩は公開ブロッカー。F-2のComing soon注記は本書Step 4で除去するので、未対応ならF-2はスキップして良い）。
-- [ ] CIグリーン（typecheck / lint / format:check / test / bundle）を着手前に確認。
+- [x] `docs/review-2026-07-08.md` の**F-1〜F-7が対応済みか確認**。未対応ならenrichより先に全件対応する（特にF-1キー漏洩は公開ブロッカー。F-2のComing soon注記は本書Step 4で除去するので、未対応ならF-2はスキップして良い）。 ✅対応済み（ce6d130・F-1回帰テスト含む）
+- [x] CIグリーン（typecheck / lint / format:check / test / bundle）を着手前に確認。 ✅e867adfでCI green確認
 
 ## Step 1: 原文テキストの抽出（`actors/edinet-filings/src/textblocks.ts` 新規）
 

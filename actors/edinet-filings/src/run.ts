@@ -51,6 +51,8 @@ export interface RunSummary {
   drift_detected: boolean;
   rate_limit_hits: number;
   aborted_by_rate_limit: boolean;
+  /** ユーザー設定の課金上限に到達し、部分結果でgraceful終了した（R2-6。エラーではない） */
+  charge_limit_reached: boolean;
 }
 
 export interface RunDeps {
@@ -140,6 +142,7 @@ export async function runEdinetFilings(
     drift_detected: false,
     rate_limit_hits: 0,
     aborted_by_rate_limit: false,
+    charge_limit_reached: false,
   };
 
   try {
@@ -193,8 +196,16 @@ export async function runEdinetFilings(
             ? extractFinancials(parseEdinetCsvZip(await deps.client.fetchDocument(doc.docID, 5)))
             : emptyFinancials();
         await deps.pushData({ ...basic, financials });
-        await deps.billing.charge('record-basic');
+        const outcome = await deps.billing.charge('record-basic');
         summary.records_pushed++;
+        if (outcome.limitReached) {
+          // R2-6: ユーザー設定の最大課金額に到達 → 部分結果＋状態メッセージでgracefulに終了
+          summary.charge_limit_reached = true;
+          deps.log.warning(
+            'Max charge limit for record-basic reached; stopping gracefully with partial results.',
+          );
+          break;
+        }
       } catch (error) {
         if (isAuthError(error)) {
           throw new RunFailedError(`EDINET authentication failed: ${String(error)}`);

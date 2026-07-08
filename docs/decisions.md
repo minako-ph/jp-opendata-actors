@@ -1,5 +1,7 @@
 # decisions.md — 実装中の判断ログ（1行/件、新しいものを上に）
 
+- 2026-07-08 追補v1.1対応（矛盾修正）: R2-1/2 enrichは同期Messages API＋prompt cachingに変更し.envの単価をclaude-haiku-4-5同期定価($1/$5)へ／R2-3 無料枠を実行単位のコード実装に変更（billingのfreeAllowance、#1=最初の3書類・仮置き）しREADME/入力スキーマの表記も更新／R2-5 独自actor-startイベントを廃止（合成apify-actor-startに$0.02設定・primary=record-basic、コードからの発火なし）／R2-6 ChargeResultのeventChargeLimitReachedで部分結果graceful終了（summary.charge_limit_reached）／R2-4 CIにbundle生成ステップ追加。R2-4のバンドル方式・R2-11のZIP前提は実装済みで整合、R2-7〜9はコンソール作業としてlaunch文書に反映。
+
 - 2026-07-08 動作検証: 不動産ライブラリ実疎通OK（**キー到着済み**＝#3ゲート解除。XIT001=549件/千代田区2024、応答はgzip、データなしは404を確認）。Anthropicキー・claude-haiku-4-5も有効（count_tokensで確認）。
 - 2026-07-08 gBizINFO v2実疎通OK（法人基本・補助金・法人検索）。補助金レコードは`{title,amount,date_of_approval,government_departments,target}`で**note列なしを実データで確定**→FR-2のdata_origin(jGrants識別)は`metadata_flg=true`の`meta-data.source`で要検証（Phase 2）。
 - 2026-07-08 EDINETレート簡易実測（未決#2進捗): 1req/秒直列で一覧＋書類取得×計10req超、429/403なし・一覧0.7s・zip1-2s。仮置き1req/秒を維持し、本格実測は数日分採取時に実施。

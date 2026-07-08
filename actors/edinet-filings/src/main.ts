@@ -35,8 +35,13 @@ try {
     throw new RunFailedError('EDINET_API_KEY is not set. Configure it as an Actor secret.');
   }
 
-  const billing = createBilling({ charge: (options) => Actor.charge(options) });
-  await billing.charge('actor-start');
+  // Startイベントは合成 `apify-actor-start` をプラットフォームが自動課金する（R2-5）。
+  // 無料枠は実行単位: 最初のN書類は課金しない（R2-3。仮置き値、公開前に確定）
+  const FREE_RECORDS_PER_RUN = 3;
+  const billing = createBilling(
+    { charge: (options) => Actor.charge(options) },
+    { freeAllowance: { 'record-basic': FREE_RECORDS_PER_RUN } },
+  );
 
   await runEdinetFilings(input, {
     client: new EdinetClient({ apiKey }),

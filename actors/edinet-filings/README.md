@@ -4,34 +4,47 @@ Structured financial filings of Japanese listed companies, in English. This Acto
 
 ## What you get
 
-One JSON item per filing. Example (illustrative):
+One JSON item per filing — real output for an actual annual report:
 
 ```json
 {
-  "doc_id": "S100XXA1",
-  "edinet_code": "E00001",
-  "sec_code": "13010",
-  "corporate_number": "6000012010023",
-  "filer_name_ja": "架空電機株式会社",
+  "doc_id": "S100YIZC",
+  "edinet_code": "E04393",
+  "sec_code": null,
+  "corporate_number": "6250001009332",
+  "filer_name_ja": "山口放送株式会社",
   "filer_name_en": null,
   "doc_type_code": "120",
   "doc_type": "Annual Securities Report",
   "is_amendment": false,
   "is_fund": false,
-  "doc_description_ja": "有価証券報告書－第100期(2025/04/01－2026/03/31)",
+  "fund_code": null,
+  "doc_description_ja": "有価証券報告書－第70期(2025/04/01－2026/03/31)",
   "period_start": "2025-04-01",
   "period_end": "2026-03-31",
-  "submitted_at": "2026-06-30T09:01:00+09:00",
+  "submitted_at": "2026-06-30T09:00:00+09:00",
   "has_xbrl": true,
   "has_pdf": true,
   "has_csv": true,
+  "financials": {
+    "net_sales": 4928920000,
+    "operating_income": 60234000,
+    "ordinary_income": 126441000,
+    "net_income": 100436000,
+    "total_assets": 13533976000,
+    "net_assets": 11726214000,
+    "number_of_employees": 120,
+    "financials_basis": "non_consolidated"
+  },
   "source": "edinet",
   "source_url": "https://api.edinet-fsa.go.jp/api/v2/documents.json?date=2026-06-30&type=2",
-  "retrieved_at": "2026-07-07T00:00:00+09:00",
+  "retrieved_at": "2026-07-08T00:00:00+09:00",
   "attribution": "出典：金融庁 EDINET",
   "schema_version": "0.1.0"
 }
 ```
+
+`financials` come from EDINET's official CSV output, normalized to raw JPY. Values that a filing does not report (industry-specific formats, funds) are `null` rather than guessed, and `financials_basis` tells you whether figures are consolidated or parent-only.
 
 With `enrich: true`, each filing also gets short English summaries (business overview, key risks, segment structure). Every generated field carries `confidence` and `method`, and proper nouns / figures are kept only if they verbatim-match the source text — otherwise they are set to `null` and flagged.
 
@@ -53,13 +66,13 @@ With `enrich: true`, each filing also gets short English summaries (business ove
 
 Pay-per-event, fully transparent:
 
-| Event                    | Price  |
-| ------------------------ | ------ |
-| Actor start              | $0.02  |
-| Filing record (basic)    | $0.005 |
-| Filing record (enriched) | $0.049 |
+| Event                    | Price                                                           |
+| ------------------------ | --------------------------------------------------------------- |
+| Actor start              | $0.02                                                           |
+| Filing record (basic)    | $0.005                                                          |
+| Filing record (enriched) | finalized at launch from measured LLM cost (approx. $0.05–0.10) |
 
-Free monthly allowance: 20 documents — enough to evaluate the output, not enough to run a business on.
+Free allowance: **the first 3 documents of every run are free** — enough to evaluate the output, not enough to run a business on. If your run hits the maximum charge limit you set, the Actor stops gracefully and keeps the partial results.
 
 ## Data source & attribution
 

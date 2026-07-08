@@ -157,6 +157,21 @@ describe('runEdinetFilings', () => {
     expect(alert).toHaveBeenCalledOnce();
   });
 
+  it('R2-6: 課金上限到達で部分結果のままgracefulに打ち切る（エラーにしない）', async () => {
+    const { deps, pushed, warnings } = makeDeps(fixtureClient());
+    const limitedBilling = createBilling({
+      charge: async () => ({ eventChargeLimitReached: true, chargedCount: 1 }),
+    });
+    const summary = await runEdinetFilings(
+      { date_from: '2026-06-30', date_to: '2026-06-30' },
+      { ...deps, billing: limitedBilling },
+    );
+    expect(summary.charge_limit_reached).toBe(true);
+    expect(summary.records_pushed).toBe(1);
+    expect(pushed).toHaveLength(1);
+    expect(warnings.some((w) => w.includes('Max charge limit'))).toBe(true);
+  });
+
   it('認証エラーは実行全体を失敗させる（FR-C8）', async () => {
     const client: EdinetClientLike = {
       listDocuments: async () => {

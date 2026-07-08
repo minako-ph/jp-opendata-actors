@@ -1,6 +1,6 @@
 {
   "title": "Japan Company Filings (EDINET Official)",
-  "description": "Fetch structured filings of Japanese listed companies from the official EDINET API. Pick a date range and run — defaults return meaningful results in under a minute.",
+  "description": "Fetch structured filings of Japanese listed companies from the official EDINET API. Pick a date range and run — defaults return meaningful results in under a minute. The first 3 documents of every run are free.",
   "type": "object",
   "schemaVersion": 1,
   "properties": {

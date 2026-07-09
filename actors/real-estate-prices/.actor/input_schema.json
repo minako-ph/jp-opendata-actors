@@ -1,0 +1,63 @@
+{
+  "title": "Japan Real Estate Transaction Prices (MLIT Official)",
+  "description": "Fetch actual real estate transaction and contract prices from Japan's official MLIT Real Estate Information Library. No API key needed — pick a year and area and run. The first 50 records of every run are free.",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "year": {
+      "title": "Year",
+      "type": "integer",
+      "description": "Transaction year (2005 or later; contract prices start in 2021).",
+      "prefill": 2024
+    },
+    "quarter": {
+      "title": "Quarter (optional)",
+      "type": "integer",
+      "description": "1-4. Leave empty to fetch the whole year.",
+      "minimum": 1,
+      "maximum": 4
+    },
+    "prefectures": {
+      "title": "Prefectures",
+      "type": "array",
+      "description": "English name (Tokyo), Japanese name (東京都), or 2-digit code (13). Up to 12 prefecture-year combinations per run.",
+      "editor": "stringList",
+      "prefill": ["Tokyo"]
+    },
+    "cities": {
+      "title": "Cities (optional)",
+      "type": "array",
+      "description": "City/ward name (Chiyoda, 千代田区) or 5-digit city code (13101). Names are resolved within the specified prefectures.",
+      "editor": "stringList",
+      "prefill": ["Chiyoda"]
+    },
+    "station": {
+      "title": "Station code (optional)",
+      "type": "string",
+      "description": "6-digit station group code from MLIT's National Land Numerical Information (N02_005g). v1 accepts codes only, not station names.",
+      "editor": "textfield"
+    },
+    "price_category": {
+      "title": "Price category",
+      "type": "string",
+      "description": "transaction = survey-based transaction prices (from 2005), closed = REINS-derived contract prices (from 2021), both = everything.",
+      "editor": "select",
+      "enum": ["both", "transaction", "closed"],
+      "enumTitles": ["Both", "Transaction prices only", "Contract (closed) prices only"],
+      "prefill": "both"
+    },
+    "property_types": {
+      "title": "Property types (optional)",
+      "type": "array",
+      "description": "Keep only records whose property type contains one of these terms (case-insensitive), e.g. \"Condominium\", \"Residential Land\", \"Forest\".",
+      "editor": "stringList"
+    },
+    "include_aggregates": {
+      "title": "Include municipality × quarter aggregates",
+      "type": "boolean",
+      "description": "Also output median price / median unit price / count per municipality and quarter, computed from the records fetched in this run. Free of charge.",
+      "default": false
+    }
+  },
+  "required": ["year"]
+}

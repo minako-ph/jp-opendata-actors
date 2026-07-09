@@ -1,0 +1,11 @@
+{
+  "actorSpecification": 1,
+  "name": "japan-real-estate-prices",
+  "title": "Japan Real Estate Transaction Prices (MLIT Official)",
+  "description": "Actual transaction and contract prices of Japanese real estate, bilingual EN/JA. Official MLIT data as clean JSON — no API key setup needed.",
+  "version": "0.1",
+  "input": "./input_schema.json",
+  "meta": {
+    "templateId": "ts-empty"
+  }
+}

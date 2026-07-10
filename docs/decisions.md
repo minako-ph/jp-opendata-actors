@@ -1,5 +1,7 @@
 # decisions.md — 実装中の判断ログ（1行/件、新しいものを上に）
 
+- 2026-07-10 docs/launch/を廃止（内容はmarketing.md §5.2／要件書§7・追補・decisions／Notion人間タスクと全面重複のため。ユニーク情報は移植済み）。#1の残作業はコンソールのみ（PPE $0.079設定・payout・SEO・permissions=limited・dataset-item削除）
+- 2026-07-10 #3の残作業はコンソールのみ（無料枠50/100確定・PPE $0.003・#1へ相互リンク追記→#1再push）
 - 2026-07-10 #3実装は第三者レビュー承認済み（review-2026-07-09-actor3.md・121テスト/実機起動検証済み）
 - 2026-07-09 ESMバンドルにcreateRequireバナーを追加（両Actor）: gov-clientsバレルがhoujin経由でCJSのiconv-liteを含むようになり`Dynamic require of "buffer"`で実行時クラッシュ→バナーで解消。**#1の潜在ランタイム障害の修正を含む**（push前に発見）。
 - 2026-07-09 #3共通化（Step 5）: billing(freeAllowance/charge_limit)・attribution挿入・バックオフはPhase 0設計で既に共有パッケージ（両Actorが参照）。監視アラートPOSTを`gov-clients/src/monitoring.ts`へ抽出し#1/#3両mainで共用（§15のN-4→gov-clients監視に整合。#1のテスト・golden全緑維持）。実行サマリ／ランナー本体の共通化はActor間で形が異なり#1リスクが勝るため見送り（複製＋TODO、#2着手時に再考）。

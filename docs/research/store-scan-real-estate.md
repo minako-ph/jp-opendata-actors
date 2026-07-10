@@ -1,6 +1,6 @@
 # Apify Store 競合スキャン: Actor#3 不動産取引価格（2026-07-09・実装前スキャン）
 
-調査方法: Store検索API＋Actorページ・詳細API。**公開直前の最終スキャンは受入基準6として人間タスク**（docs/launch/real-estate-prices.md）。
+調査方法: Store検索API＋Actorページ・詳細API。**公開直前の最終スキャンは受入基準6として人間タスク**（人間タスク・Notionで管理）。
 
 ## 結論
 

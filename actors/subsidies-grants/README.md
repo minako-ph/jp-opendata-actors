@@ -43,6 +43,10 @@ One JSON item per subsidy record — real output for Hitachi, Ltd. (corporate nu
 - **Subsidy titles are Japanese only** (`title_ja`). This Actor uses no LLM, so free-text titles are not translated. Ministry names are translated by a fixed dictionary of official English names; agencies outside the dictionary return `ministry: null` with the Japanese original preserved.
 - **jGrants origin is not identifiable.** Whether a record originally came through the jGrants application system is not distinguishable in the gBizINFO v2 data, so no such flag is provided.
 - Cross-company search requires a `ministry` in v1, and date filters are applied client-side to the approval date (the upstream API cannot filter subsidies by date).
+
+<!-- TODO(国税庁ID到着後に次の1行を除去し、input_schema.jsonのcompany_names説明の「TEMPORARILY UNAVAILABLE」前置きも元に戻す): -->
+
+- **`company_names` is temporarily unavailable**: the National Tax Agency Web-API credential for name resolution is pending issuance. Runs using `company_names` currently fail with a clear error — use `corporate_numbers` instead.
 - `company_names` resolution needs the National Tax Agency Web-API (operator-side credential). Names that resolve ambiguously are reported, never guessed.
 - The upstream API may change or suspend service without notice; we monitor with frozen-dataset regression tests.
 

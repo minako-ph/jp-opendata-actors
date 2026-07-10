@@ -14,7 +14,7 @@
     "company_names": {
       "title": "Company names (optional)",
       "type": "array",
-      "description": "Japanese company names, resolved to corporate numbers via the official National Tax Agency registry. Unambiguous matches only — ambiguous names are reported, not guessed.",
+      "description": "TEMPORARILY UNAVAILABLE — the National Tax Agency Web-API credential for name resolution is pending; runs using this field fail with a clear error. Use corporate_numbers instead. Once available: Japanese company names, resolved to corporate numbers via the official National Tax Agency registry. Unambiguous matches only — ambiguous names are reported, not guessed.",
       "editor": "stringList"
     },
     "ministry": {

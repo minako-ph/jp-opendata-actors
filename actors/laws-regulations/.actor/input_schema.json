@@ -1,0 +1,35 @@
+{
+  "title": "Japan Laws & Regulations (e-Gov Official)",
+  "description": "Fetch the full text of one Japanese law as structured JSON from the official e-Gov Laws API. Pick a law by title, law number, or law ID; optionally narrow to specific articles or translate them. The first 20 articles of every run are free.",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "law_query": {
+      "title": "Law (title / number / ID)",
+      "type": "string",
+      "description": "Law title (個人情報の保護に関する法律), common abbreviation, law number (平成十五年法律第五十七号), or e-Gov law ID (415AC0000000057). One law per run.",
+      "editor": "textfield",
+      "prefill": "個人情報の保護に関する法律"
+    },
+    "articles": {
+      "title": "Articles (optional)",
+      "type": "array",
+      "description": "Article numbers to keep: \"1\", \"2-2\" (第2条の2), or Japanese like 第二条の二. Empty = all main-provision articles (up to 200 per run).",
+      "editor": "stringList",
+      "prefill": ["1", "2", "3", "4", "5"]
+    },
+    "as_of_date": {
+      "title": "As-of date (optional)",
+      "type": "string",
+      "description": "Point-in-time version of the law (YYYY-MM-DD). Empty = current text.",
+      "editor": "textfield"
+    },
+    "translate": {
+      "title": "English reference translation",
+      "type": "boolean",
+      "description": "Add an English reference translation and a one-sentence summary per article (LLM; unofficial, no legal effect). Billed per translated article.",
+      "default": false
+    }
+  },
+  "required": ["law_query"]
+}

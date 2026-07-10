@@ -34,6 +34,11 @@ export function createAnthropicCreateMessage(options: { apiKey: string }): Creat
         `LLM did not call ${request.tool.name} (stop_reason=${String(response.stop_reason)})`,
       );
     }
+    if (response.stop_reason === 'max_tokens') {
+      // 出力上限で切れたtool入力は不完全（切れた訳文を正常出力として流さない）。
+      // 呼び出し側のbasicフォールバック（FR-C8）に落とす
+      throw new Error(`LLM output truncated at max_tokens (${request.maxTokens})`);
+    }
     const usage = response.usage;
     return {
       toolInput: toolUse.input,

@@ -1,0 +1,11 @@
+{
+  "actorSpecification": 1,
+  "name": "japan-laws-regulations",
+  "title": "Japan Laws & Regulations (e-Gov Official)",
+  "description": "Full text of Japanese laws as structured JSON — articles, paragraphs, items — with optional English reference translations and summaries. Official e-Gov API.",
+  "version": "0.1",
+  "input": "./input_schema.json",
+  "meta": {
+    "templateId": "ts-empty"
+  }
+}

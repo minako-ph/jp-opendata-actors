@@ -1,0 +1,11 @@
+{
+  "actorSpecification": 1,
+  "name": "japan-company-enrichment",
+  "title": "Japan Company Data Enrichment (Official Registry)",
+  "description": "Corporate number lookup + firmographics of Japanese companies, English output. Official gBizINFO and NTA registry data: capital, employees, subsidies, patents.",
+  "version": "0.1",
+  "input": "./input_schema.json",
+  "meta": {
+    "templateId": "ts-empty"
+  }
+}

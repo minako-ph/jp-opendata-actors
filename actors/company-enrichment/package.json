@@ -1,0 +1,26 @@
+{
+  "name": "@jp-opendata/actor-company-enrichment",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "esbuild src/main.ts --bundle --platform=node --target=node22 --format=esm --banner:js=\"import{createRequire as __cr}from'node:module';const require=__cr(import.meta.url);\" --external:apify --outfile=dist/main.js"
+  },
+  "dependencies": {
+    "@jp-opendata/attribution": "workspace:*",
+    "@jp-opendata/billing": "workspace:*",
+    "@jp-opendata/enrich": "workspace:*",
+    "@jp-opendata/gov-clients": "workspace:*",
+    "@jp-opendata/normalize-jp": "workspace:*",
+    "apify": "^3.4.0"
+  },
+  "devDependencies": {
+    "@jp-opendata/testing": "workspace:*",
+    "esbuild": "^0.25.0",
+    "@jp-opendata/schema-buffer": "workspace:*"
+  }
+}

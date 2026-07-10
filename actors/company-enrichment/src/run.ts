@@ -356,9 +356,7 @@ async function pushRegistryFallback(
       result = await deps.houjin.findByNumbers([target.corporateNumber]);
     } catch (error) {
       if (error instanceof RateLimitAbortError) throw error;
-      deps.log.warning(
-        `Registry fallback failed for ${target.corporateNumber}: ${String(error)}`,
-      );
+      deps.log.warning(`Registry fallback failed for ${target.corporateNumber}: ${String(error)}`);
     }
     if (result !== null) {
       summary.drift_detected = summary.drift_detected || result.drift.hasDrift;

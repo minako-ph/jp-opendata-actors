@@ -9,11 +9,13 @@ import {
   type GbizProcurementHojin,
   type GbizSubsidyHojin,
   type HoujinNameSearcher,
+  type HoujinResult,
   type HttpStats,
 } from '@jp-opendata/gov-clients';
 import {
   industryToEnglish,
   toCompanyItem,
+  toRegistryFallbackItem,
   type ActivityCounts,
   type NameResolutionMeta,
 } from './transform.js';
@@ -26,8 +28,8 @@ import {
  * - enriched: LLMで①事業概要EN一行（数値禁止＋数字列照合フラグ）②name_en翻字
  *   （api_native無し時のみ・照合スキップ）。LLM失敗はbasicへフォールバック（FR-C8・課金なし）
  * - FR-C7: 1,000社/run。FR-C8: 1社の失敗は_error行で継続、認証エラー/失敗率50%超のみ実行失敗
- * - gBizINFO未収載（404）は非課金の_error行で明示（basicデータ源がgBizINFOのため。
- *   houjin /4/numフォールバックはID到着後のTODO）
+ * - gBizINFO未収載は houjin /4/num フォールバック（基本3情報のみ・source=houjin・record-basic課金）。
+ *   レジストリにも無い/houjin未設定の場合は非課金の_error行で明示
  */
 
 export const ACTIVITY_FIELDS = ['subsidies', 'procurement', 'patents'] as const;
@@ -67,6 +69,11 @@ export interface RunLogger {
   error(message: string): void;
 }
 
+/** company_names解決（/4/name）と未収載フォールバック（/4/num）の両方を担う法人番号Web-API面 */
+export interface HoujinLookup extends HoujinNameSearcher {
+  findByNumbers(numbers: readonly string[]): Promise<HoujinResult>;
+}
+
 export interface RunSummary {
   companies_planned: number;
   companies_used: number;
@@ -74,6 +81,8 @@ export interface RunSummary {
   names_resolved: number;
   names_unresolved: number;
   companies_not_found: number;
+  /** gBizINFO未収載→法人番号レジストリの基本3情報で出力した件数 */
+  houjin_fallbacks: number;
   records_pushed: number;
   record_errors: number;
   record_failure_rate: number;
@@ -93,8 +102,8 @@ export interface RunSummary {
 
 export interface RunDeps {
   client: GbizinfoClientLike;
-  /** 法人番号Web-API（company_names解決用）。HOUJIN_APP_ID未設定時はnull */
-  houjin: HoujinNameSearcher | null;
+  /** 法人番号Web-API（company_names解決＋未収載フォールバック用）。HOUJIN_APP_ID未設定時はnull */
+  houjin: HoujinLookup | null;
   billing: Billing;
   pushData: (item: Record<string, unknown>) => Promise<void>;
   log: RunLogger;
@@ -169,6 +178,7 @@ export async function runCompanyEnrichment(
     names_resolved: 0,
     names_unresolved: 0,
     companies_not_found: 0,
+    houjin_fallbacks: 0,
     records_pushed: 0,
     record_errors: 0,
     record_failure_rate: 0,
@@ -208,14 +218,12 @@ export async function runCompanyEnrichment(
         }
         if (error instanceof RateLimitAbortError) throw error;
         if (isNotFound(error)) {
-          // basicデータ源がgBizINFOのため未収載は明示行で返す（非課金）
-          summary.companies_not_found++;
-          await deps.pushData({
-            record_type: 'company',
-            corporate_number: target.corporateNumber,
-            name_resolution: target.nameResolution,
-            _error: 'Not covered by gBizINFO (approx. 4M corporations).',
-          });
+          const fallback = await pushRegistryFallback(target, deps, summary);
+          if (fallback.limitReached) {
+            summary.charge_limit_reached = true;
+            deps.log.warning('Max charge limit reached; stopping gracefully with partial results.');
+            break;
+          }
           continue;
         }
         summary.record_errors++;
@@ -235,13 +243,13 @@ export async function runCompanyEnrichment(
       }
       const basic = basicResult.hojinInfos[0];
       if (basic === undefined) {
-        summary.companies_not_found++;
-        await deps.pushData({
-          record_type: 'company',
-          corporate_number: target.corporateNumber,
-          name_resolution: target.nameResolution,
-          _error: 'gBizINFO returned no profile for this corporate number.',
-        });
+        // 200だがプロフィール空＝未収載と同義なので同じフォールバックに乗せる
+        const fallback = await pushRegistryFallback(target, deps, summary);
+        if (fallback.limitReached) {
+          summary.charge_limit_reached = true;
+          deps.log.warning('Max charge limit reached; stopping gracefully with partial results.');
+          break;
+        }
         continue;
       }
 
@@ -329,6 +337,64 @@ export async function runCompanyEnrichment(
     );
   }
   return summary;
+}
+
+/**
+ * gBizINFO未収載法人のフォールバック。法人番号Web-API /4/num の基本3情報
+ * （商号・所在地・法人番号）のみをsource=houjinの行として出力しrecord-basic課金する。
+ * レジストリにも無い・houjin未設定・houjin失敗の場合は従来どおり非課金の_error行。
+ */
+async function pushRegistryFallback(
+  target: CompanyTarget,
+  deps: RunDeps,
+  summary: RunSummary,
+): Promise<{ limitReached: boolean }> {
+  const notCovered = 'Not covered by gBizINFO (approx. 4M corporations).';
+  if (deps.houjin !== null) {
+    let result: HoujinResult | null = null;
+    try {
+      result = await deps.houjin.findByNumbers([target.corporateNumber]);
+    } catch (error) {
+      if (error instanceof RateLimitAbortError) throw error;
+      deps.log.warning(
+        `Registry fallback failed for ${target.corporateNumber}: ${String(error)}`,
+      );
+    }
+    if (result !== null) {
+      summary.drift_detected = summary.drift_detected || result.drift.hasDrift;
+      const corp = result.corporations[0];
+      if (corp !== undefined) {
+        const item = toRegistryFallbackItem(corp, target.nameResolution, {
+          sourceUrl: result.publicUrl,
+          retrievedAt: deps.retrievedAt,
+        });
+        await deps.pushData(item);
+        summary.records_pushed++;
+        summary.houjin_fallbacks++;
+        deps.log.info(
+          `${target.corporateNumber} is not covered by gBizINFO; returned NTA registry basic profile instead.`,
+        );
+        const outcome = await deps.billing.charge('record-basic');
+        return { limitReached: outcome.limitReached };
+      }
+      summary.companies_not_found++;
+      await deps.pushData({
+        record_type: 'company',
+        corporate_number: target.corporateNumber,
+        name_resolution: target.nameResolution,
+        _error: `${notCovered} Not found in the NTA corporate number registry either.`,
+      });
+      return { limitReached: false };
+    }
+  }
+  summary.companies_not_found++;
+  await deps.pushData({
+    record_type: 'company',
+    corporate_number: target.corporateNumber,
+    name_resolution: target.nameResolution,
+    _error: notCovered,
+  });
+  return { limitReached: false };
 }
 
 /** 行政実績ブロックの件数取得。ブロック単位の失敗はnull＋警告で継続（行は出力する） */

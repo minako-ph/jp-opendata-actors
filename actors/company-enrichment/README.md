@@ -51,7 +51,7 @@ With `enrich: true`, each item also carries an `enriched` block: `business_summa
 
 ## What this does NOT do
 
-- **Coverage is gBizINFO's ~4 million corporations**, and its activity data (subsidies, procurement, patents) covers only what each ministry publishes — not everything. Companies outside gBizINFO are reported as explicit non-billable rows.
+- **Coverage is gBizINFO's ~4 million corporations**, and its activity data (subsidies, procurement, patents) covers only what each ministry publishes — not everything. Companies outside gBizINFO fall back to the National Tax Agency corporate number registry: you still get a billable row with the registry basics (name, address, corporate number; `source: "houjin"`), while gBizINFO-derived fields are `null`. Numbers found in neither source are reported as explicit non-billable error rows.
 - **English names are never guessed in the basic output.** `name_en` is the officially registered English name or `null`. The LLM transliteration (enriched only) is machine-generated, cannot be verbatim-verified by construction, and is labeled `method: "llm"` — treat it as a reading aid, not an official name.
 - **Address romanization stops at the prefecture** (rule-based, 47-prefecture table). Full street addresses are provided in Japanese only — no guessed romanization.
 - `industry` translates JSIC division codes; `business_item_codes` are qualification item codes kept as-is (upstream provides no names).

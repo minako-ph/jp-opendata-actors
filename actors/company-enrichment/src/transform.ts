@@ -1,6 +1,10 @@
 import { withCommonMeta, type CommonMeta } from '@jp-opendata/attribution';
 import { JSIC_DIVISION_EN, splitPrefecture } from '@jp-opendata/normalize-jp';
-import type { GbizBasicInfo, NameResolutionConfidence } from '@jp-opendata/gov-clients';
+import type {
+  GbizBasicInfo,
+  HoujinCorporation,
+  NameResolutionConfidence,
+} from '@jp-opendata/gov-clients';
 
 /**
  * gBizINFO法人基本情報＋行政実績カウント → companyアイテム変換（FR-4 / FR-C1 / FR-C2）。
@@ -112,6 +116,61 @@ export function toCompanyItem(
   };
   return withCommonMeta(item, {
     source: 'gbizinfo',
+    sourceUrl: context.sourceUrl,
+    schemaVersion: COMPANY_SCHEMA_VERSION,
+    retrievedAt: context.retrievedAt,
+  });
+}
+
+/**
+ * gBizINFO未収載法人のフォールバック行。法人番号Web-API /4/num の基本3情報
+ * （商号・所在地・法人番号）のみを付与し、gBizINFO由来フィールドはすべてnull。
+ * source=houjin（出典文言も法人番号システムのもの）で通常行と区別できる。
+ * 行政実績カウントは取得しない（gBizINFO未収載のため0件と未知を区別できない）。
+ */
+export function toRegistryFallbackItem(
+  corp: HoujinCorporation,
+  nameResolution: NameResolutionMeta | null,
+  context: TransformContext,
+): CompanyItem & CommonMeta {
+  const domestic = `${corp.prefectureName}${corp.cityName}${corp.streetNumber}`.trim();
+  const outside = corp.addressOutside.trim();
+  const addressJa = domestic !== '' ? domestic : outside !== '' ? outside : null;
+  const prefecture = domestic === '' ? null : splitPrefecture(domestic);
+  const item: CompanyItem = {
+    record_type: 'company',
+    corporate_number: corp.corporateNumber,
+    name_en: null,
+    name_en_method: null,
+    name_ja: corp.name,
+    name_kana: corp.furigana.trim() === '' ? null : corp.furigana,
+    address_ja: addressJa,
+    postal_code: corp.postCode.trim() === '' ? null : corp.postCode,
+    prefecture: prefecture?.prefectureEn ?? null,
+    prefecture_ja: prefecture?.prefectureJa ?? null,
+    corporate_status_ja: null,
+    representative_name_ja: null,
+    capital_stock_jpy: null,
+    employee_number: null,
+    company_size_male: null,
+    company_size_female: null,
+    date_of_establishment: null,
+    founding_year: null,
+    business_summary_ja: null,
+    industry: [],
+    industry_codes: [],
+    business_item_codes: [],
+    company_url: null,
+    qualification_grade_ja: null,
+    has_subsidy: null,
+    subsidy_count: null,
+    has_procurement: null,
+    procurement_count: null,
+    patent_count: null,
+    name_resolution: nameResolution,
+  };
+  return withCommonMeta(item, {
+    source: 'houjin',
     sourceUrl: context.sourceUrl,
     schemaVersion: COMPANY_SCHEMA_VERSION,
     retrievedAt: context.retrievedAt,

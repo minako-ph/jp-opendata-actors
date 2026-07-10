@@ -1,0 +1,39 @@
+{
+  "title": "Japan Subsidies & Grants Data (Official)",
+  "description": "Fetch government subsidy records of Japanese companies from the official gBizINFO API. Give corporate numbers (fastest), company names, or a ministry for a cross-company search. The first 50 records of every run are free.",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "corporate_numbers": {
+      "title": "Corporate numbers",
+      "type": "array",
+      "description": "13-digit Japanese corporate numbers (法人番号), e.g. 7010001008844 for Hitachi, Ltd. Up to 500 companies per run.",
+      "editor": "stringList",
+      "prefill": ["7010001008844"]
+    },
+    "company_names": {
+      "title": "Company names (optional)",
+      "type": "array",
+      "description": "Japanese company names, resolved to corporate numbers via the official National Tax Agency registry. Unambiguous matches only — ambiguous names are reported, not guessed.",
+      "editor": "stringList"
+    },
+    "ministry": {
+      "title": "Ministry (cross-company search)",
+      "type": "string",
+      "description": "Search across companies by granting ministry/agency when no corporate numbers are given, e.g. 経済産業省, \"Ministry of Economy, Trade and Industry\", or a gBizINFO ministry code (1-49). Also filters records when combined with corporate numbers.",
+      "editor": "textfield"
+    },
+    "date_from": {
+      "title": "Approval date from (optional)",
+      "type": "string",
+      "description": "Keep only subsidies approved on or after this date (YYYY-MM-DD).",
+      "editor": "textfield"
+    },
+    "date_to": {
+      "title": "Approval date to (optional)",
+      "type": "string",
+      "description": "Keep only subsidies approved on or before this date (YYYY-MM-DD).",
+      "editor": "textfield"
+    }
+  }
+}

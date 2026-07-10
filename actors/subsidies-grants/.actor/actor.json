@@ -1,0 +1,11 @@
+{
+  "actorSpecification": 1,
+  "name": "japan-subsidies-grants",
+  "title": "Japan Subsidies & Grants Data (Official)",
+  "description": "Which Japanese companies received which government subsidies. Official gBizINFO data as clean JSON — by corporate number, company name, or ministry.",
+  "version": "0.1",
+  "input": "./input_schema.json",
+  "meta": {
+    "templateId": "ts-empty"
+  }
+}

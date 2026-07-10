@@ -1,5 +1,6 @@
 # decisions.md — 実装中の判断ログ（1行/件、新しいものを上に）
 
+- 2026-07-10 #2実装（Step 0解消含む）: ①**data_origin廃止**＝jGrants由来識別はv2データで不可（meta-data.sourceは提供元府省名のみ・417レコード実証→FR-2からの逸脱。README正直明記）②横断検索は法人検索API（source=4×ministry内部コード1〜49・page上限10）→法人ごと/subsidyの2段構成、日付はdate_of_approvalクライアント側フィルタ・**v1はministry必須**③FR-C7新規定義＝対象法人500社 or 横断500件④補助金amountは実応答が文字列→スキーマ両受け・出力で数値化、meta-dataはオブジェクト、真のnullも出現→stripNullStringsで"Null"文字列と共にundefined化（**柱3影響: GbizSubsidy.amountの型がnumber|stringに拡大**）⑤prefillはトヨタ（補助金0件を実証）から日立製作所7010001008844へ変更⑥補助金名の英語化はv1非対応（LLM不使用の要件優先・title_jaのみ）⑦名称解決は/4/nameの共有モジュール（exact/selected/ambiguous/not_found・#4と共通）でHOUJIN_APP_ID未設定時はcompany_names入力を実行失敗に。E2E実測: 日立5件・最初の結果958ms。詳細: docs/research/gbizinfo-subsidy.md
 - 2026-07-10 docs/launch/を廃止（内容はmarketing.md §5.2／要件書§7・追補・decisions／Notion人間タスクと全面重複のため。ユニーク情報は移植済み）。#1の残作業はコンソールのみ（PPE $0.079設定・payout・SEO・permissions=limited・dataset-item削除）
 - 2026-07-10 #3の残作業はコンソールのみ（無料枠50/100確定・PPE $0.003・#1へ相互リンク追記→#1再push）
 - 2026-07-10 #3実装は第三者レビュー承認済み（review-2026-07-09-actor3.md・121テスト/実機起動検証済み）

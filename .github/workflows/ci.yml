@@ -24,3 +24,4 @@ jobs:
       # 追補v1.1 R2-4: bundle生成の成功までがCIの責務（apify pushは手動）
       - run: pnpm --filter @jp-opendata/actor-edinet-filings build
       - run: pnpm --filter @jp-opendata/actor-real-estate-prices build
+      - run: pnpm --filter @jp-opendata/actor-subsidies-grants build

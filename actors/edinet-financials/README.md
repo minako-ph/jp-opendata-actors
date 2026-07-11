@@ -1,6 +1,6 @@
 # Japan Financial Statements (EDINET Official)
 
-Normalized **balance sheet, income statement and cash-flow** figures of Japanese listed companies, in English, from the **official EDINET API** (Japan's Financial Services Agency disclosure system). One JSON record per annual securities report, with figures in raw JPY, both Japan GAAP and IFRS filers supported, and **the source XBRL element ID attached to every number** so you can verify each value against the filing. **Official API based — no scraping.** This Actor is the numbers companion to [Japan Company Filings (EDINET Official)](https://apify.com/store): use that Actor to **discover** filings (metadata, headline KPIs, English summaries), then pass its `doc_id` values here to get the **full normalized three statements** — the two Actors deliberately do not overlap, so you never pay twice for the same fields. Tested against frozen datasets on every release.
+Normalized **balance sheet, income statement and cash-flow** figures of Japanese listed companies, in English, from the **official EDINET API** (Japan's Financial Services Agency disclosure system). One JSON record per annual securities report, with figures in raw JPY, both Japan GAAP and IFRS filers supported, and **the source XBRL element ID attached to every number** so you can verify each value against the filing. **Official API based — no scraping.** This Actor is the numbers companion to **Japan Company Filings (EDINET Official)**: use that Actor to **discover** filings (metadata, headline KPIs, English summaries), then pass its `doc_id` values here to get the **full normalized three statements** — the two Actors deliberately do not overlap, so you never pay twice for the same fields. Tested against frozen datasets on every release.
 
 ## What you get
 
@@ -103,7 +103,7 @@ Data comes from the [EDINET API](https://disclosure2.edinet-fsa.go.jp/) operated
 
 ## More Japan data Actors
 
-- **[Japan Company Filings (EDINET Official)](https://apify.com/store)** — discover filings: submission metadata, headline KPIs (7 values), optional English summaries. Feed its `doc_id` output into this Actor.
+- **Japan Company Filings (EDINET Official)** — discover filings: submission metadata, headline KPIs (7 values), optional English summaries. Feed its `doc_id` output into this Actor.
 - Part of a family of official-API-based Japan data Actors (subsidies & grants, real estate transaction prices, company enrichment, laws & regulations). See the developer profile for the full list.
 
 ## Contact

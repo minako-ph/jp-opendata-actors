@@ -1,0 +1,11 @@
+{
+  "actorSpecification": 1,
+  "name": "japan-edinet-financials",
+  "title": "Japan Financial Statements (EDINET Official)",
+  "description": "Normalized balance sheet, P&L and cash-flow figures of Japanese listed companies from the official EDINET API. English JSON with source element IDs.",
+  "version": "0.1",
+  "input": "./input_schema.json",
+  "meta": {
+    "templateId": "ts-empty"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "title": "Japan Financial Statements (EDINET Official)",
+  "description": "Normalized balance sheet, income statement and cash flow of Japanese listed companies from official EDINET annual reports. Pass doc_ids (e.g. from the Japan Company Filings Actor), or pick a date range. The first 3 documents of every run are free.",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "doc_ids": {
+      "title": "EDINET document IDs (main path)",
+      "type": "array",
+      "description": "EDINET document IDs of annual securities reports (docTypeCode 120/130), e.g. from the doc_id field of the Japan Company Filings (EDINET Official) Actor. Takes precedence over the date range. Up to 500 per run.",
+      "editor": "stringList",
+      "prefill": ["S100YN9E", "S100YN95"]
+    },
+    "date_from": {
+      "title": "From date (alternative path)",
+      "type": "string",
+      "description": "Start of the submission-date range (YYYY-MM-DD). Used only when doc_ids is empty; annual securities reports submitted in the range are processed.",
+      "editor": "datepicker"
+    },
+    "date_to": {
+      "title": "To date (alternative path)",
+      "type": "string",
+      "description": "End of the submission-date range (YYYY-MM-DD), inclusive. Up to 31 days are scanned and up to 500 matching documents are processed per run.",
+      "editor": "datepicker"
+    },
+    "edinet_codes": {
+      "title": "EDINET codes (optional filter)",
+      "type": "array",
+      "description": "With the date range: only keep filings by these EDINET filer codes (e.g. E02385).",
+      "editor": "stringList"
+    },
+    "sec_codes": {
+      "title": "Securities codes (optional filter)",
+      "type": "array",
+      "description": "With the date range: only keep filings by these securities codes (e.g. 79850 for 7985).",
+      "editor": "stringList"
+    },
+    "include_amendments": {
+      "title": "Include amendments",
+      "type": "boolean",
+      "description": "With the date range: also include amended annual reports (document type 130).",
+      "default": false
+    }
+  }
+}

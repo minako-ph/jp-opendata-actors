@@ -89,6 +89,34 @@ importers:
         specifier: ^0.25.0
         version: 0.25.12
 
+  actors/edinet-financials:
+    dependencies:
+      '@jp-opendata/attribution':
+        specifier: workspace:*
+        version: link:../../packages/attribution
+      '@jp-opendata/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
+      '@jp-opendata/gov-clients':
+        specifier: workspace:*
+        version: link:../../packages/gov-clients
+      '@jp-opendata/normalize-jp':
+        specifier: workspace:*
+        version: link:../../packages/normalize-jp
+      apify:
+        specifier: ^3.4.0
+        version: 3.7.2
+    devDependencies:
+      '@jp-opendata/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      esbuild:
+        specifier: ^0.25.0
+        version: 0.25.12
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.3
+
   actors/laws-regulations:
     dependencies:
       '@jp-opendata/attribution':

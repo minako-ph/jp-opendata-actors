@@ -1,5 +1,7 @@
 # decisions.md — 実装中の判断ログ（1行/件、新しいものを上に）
 
+- 2026-07-12 最終監査FIX-3〜5適用（review-2026-07-12-final-audit.md）: ①FIX-3=ルートREADMEの「5本」2箇所を6本へ（requirements/handoverの5本前提は追補パターンで次回全面改訂まで据え置き）②FIX-4=AGENTS.md読み順に#6要件書の1行追加（CLAUDE.mdはsymlinkのため同時反映）③FIX-5=**#6課金ログのローカル実機確認**＝`ACTOR_TEST_PAY_PER_EVENT=1`＋`ACTOR_USE_CHARGING_LOG_DATASET=1`で5書類（有報4＋半期1）実行→charging_logに`record-basic chargedCount=1`のみ・summary `records_pushed=4 / records_charged=1 / free_used=3`（**freeAllowance=3の実配線を確認**・ログと一致）・非有報S100YNG2は`_error`行で**非課金**スキップ（skipped_non_annual=1。**半期報告書のDocumentTypeDEI=「第五号様式」を実データで確認**＝安全弁の判定値が実証に格上げ）。golden/fixture変更ゼロ
+
 - 2026-07-11 レビューFIX-1/2適用（review-2026-07-11-actor6.md）: ①#6 READMEの#1相互リンク2箇所をリンクなし太字へ（未公開Actorへの言及はリンクなし規約。実URL化は両Actor公開後の人間タスク＝Notion A6）②live-e2e.tsに`--from/--to/--max`を追加し**date_range副経路を実機疎通**（2026-06-30単日・maxDocuments=5上書き: days_scanned=1・documents_planned=5(documents_truncated=true)・records_pushed=5・エラー0・非有報スキップ0・最初の結果1,430ms/全体5.9s。S100YN9EはStep 6のdoc_ids経路golden値と一致を確認）
 - 2026-07-11 #6の新規golden `run.doc-ids.json`（fixture4系統・N6-2で192値を機械検証）を第三者レビューで承認（review-2026-07-11-actor6.md・対象コミット5ce0e35。既存#1〜#5のgolden/fixture/テストへの変更ゼロ）
 

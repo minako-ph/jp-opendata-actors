@@ -1,5 +1,7 @@
 # decisions.md — 実装中の判断ログ（1行/件、新しいものを上に）
 
+- 2026-07-13 #7第三者レビュー承認（review-2026-07-13-actor7・対象a3d3a92・FIX事項ゼロ）: 実装前クローンとの全ファイルdiffで既存#1〜#6変更ゼロを機械確認・第三者環境で346テスト/bundle7本/typecheck/lint/format全緑・snapshot md5一致/生成物バイト同一/コアdiff=prettierのみ・移植元golden 2019-05-01をフィールド単位照合し完全一致・prefill 4日付のsnapshot実在確認済み
+
 - 2026-07-13 #7移植元goldenとの同値性確認: 移植元 jp-business-api の golden fixtures.json **全35件を機械照合し diffs=0**（照合スクリプトで各エンドポイント期待値↔Actor変換結果を突合。許容差分=FR-C2共通メタ・`operation`追加・エラーのHTTP形式→`_error`レコード化・収録範囲外メッセージ末尾のルート誘導文をoperation名へ置換のみ）。なお `date_info` は移植元 /v1/date に /wareki/from-western の `note`（未来日の元号注記）を追加包含（要件書FR7-1の包含関係どおり。フィールド名は移植元 from-western の `note` を踏襲＝新規フィールド発明なし）
 - 2026-07-13 #7 normalize-jp差分ゼロ確認: 移植元 `packages/normalize-jp/src` と本リポジトリ正典を全ファイルdiffし**内容同一**（SYNC.md読み取り専用規律どおり）。柱3再同期は不要（normalize-jp・gov-clients無変更。attributionに `cao_holidays` キーを追加したが柱3非参照パッケージ）
 - 2026-07-13 #7 KPI特例を公開前に確定（要件書§8の4点）: ①3ヶ月$100未達でも改修→統廃合サイクルを適用せず凍結・掲載継続 ②退場検討は保守実績が月0.5時間超×2ヶ月連続の場合のみ ③ファミリー6ヶ月合算$200 KPIの分母に#7を含めない ④本行をもって公開前記録とする

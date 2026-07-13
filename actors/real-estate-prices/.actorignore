@@ -1,0 +1,3 @@
+# apify push は .gitignore を尊重し dist/ を除外してしまうため、
+# ビルド成果物 dist/ だけを force-include する（Dockerfile が COPY するため必須）。
+!dist/

@@ -160,6 +160,7 @@ jp-opendata-actors/
 ## 13. Do / Don't（絶対規則）
 
 **Do**: 公式APIのみ／直列＋源別間隔（§4）／部分失敗は継続（FR-C8）／実行上限で打ち切り（FR-C7）／出典文言を全アイテムに／未定義事項は最小実装＋TODO＋decisions.md。
+各Actorに `.actorignore`（`!dist/`）必須。新規Actor追加時も同様。理由: apify push は .gitignore の dist/ を除外するため。
 **Don't**:
 - DOMスクレイピング・ヘッドレスブラウザを書かない。
 - レインズ／J-PlatPat／TDnetをデータ源にしない。

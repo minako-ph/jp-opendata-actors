@@ -1,0 +1,38 @@
+[
+  {
+    "operation": "business_days_count",
+    "from": "2026-07-06",
+    "to": "2026-07-19",
+    "includes_from": true,
+    "includes_to": true,
+    "business_day_count": 8,
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  },
+  {
+    "operation": "business_days_count",
+    "from": "2026-07-06",
+    "to": "2026-07-12",
+    "includes_from": true,
+    "includes_to": true,
+    "business_day_count": 5,
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  },
+  {
+    "operation": "business_days_count",
+    "input": "{\"from\":\"2026-08-01\",\"to\":\"2026-07-01\"}",
+    "_error": "\"from\" (2026-08-01) must be on or before \"to\" (2026-07-01).",
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  }
+]

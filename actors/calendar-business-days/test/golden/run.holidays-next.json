@@ -1,0 +1,18 @@
+[
+  {
+    "operation": "holidays_next",
+    "from": "2026-07-13",
+    "next_holiday": {
+      "date": "2026-07-20",
+      "name_ja": "海の日",
+      "name_en": "Marine Day",
+      "is_general_public_holiday": false
+    },
+    "days_until": 7,
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  }
+]

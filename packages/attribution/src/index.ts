@@ -3,7 +3,7 @@
  * 文言は指定どおりの逐語。改変禁止。
  */
 
-export type SourceKey = 'edinet' | 'gbizinfo' | 'reinfolib' | 'houjin' | 'laws';
+export type SourceKey = 'edinet' | 'gbizinfo' | 'reinfolib' | 'houjin' | 'laws' | 'cao_holidays';
 
 export const ATTRIBUTION_TEXT: Readonly<Record<SourceKey, string>> = {
   houjin:
@@ -13,6 +13,7 @@ export const ATTRIBUTION_TEXT: Readonly<Record<SourceKey, string>> = {
   gbizinfo: '出典：経済産業省 Gビズインフォ',
   edinet: '出典：金融庁 EDINET',
   laws: '出典：e-Gov法令検索（デジタル庁）',
+  cao_holidays: '出典：内閣府「国民の祝日」',
 };
 
 /** 法令英訳に付す参考訳disclaimer（FR-5 / 引継書§4.5） */

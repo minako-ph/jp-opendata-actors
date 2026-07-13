@@ -1,0 +1,45 @@
+[
+  {
+    "operation": "business_days_add",
+    "start_date": "2026-07-17",
+    "business_days_added": 1,
+    "result_date": "2026-07-21",
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  },
+  {
+    "operation": "business_days_add",
+    "start_date": "2026-07-21",
+    "business_days_added": -1,
+    "result_date": "2026-07-17",
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  },
+  {
+    "operation": "business_days_add",
+    "start_date": "2026-07-11",
+    "business_days_added": 0,
+    "result_date": "2026-07-11",
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  },
+  {
+    "operation": "business_days_add",
+    "input": "{\"date\":\"2027-12-28\",\"days\":10}",
+    "_error": "Adding 10 business days to 2027-12-28 goes beyond the holiday data coverage, so the result cannot be determined from recorded data. (covered_from=1955-01-01, covered_to=2027-12-31)",
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  }
+]

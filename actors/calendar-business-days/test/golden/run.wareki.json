@@ -1,0 +1,92 @@
+[
+  {
+    "operation": "wareki_to_western",
+    "input": "令和8年7月11日",
+    "date": "2026-07-11",
+    "wareki": {
+      "era": "reiwa",
+      "era_ja": "令和",
+      "year": 8,
+      "is_first_year": false,
+      "formatted_ja": "令和8年7月11日"
+    },
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  },
+  {
+    "operation": "wareki_to_western",
+    "input": "R8.7.11",
+    "date": "2026-07-11",
+    "wareki": {
+      "era": "reiwa",
+      "era_ja": "令和",
+      "year": 8,
+      "is_first_year": false,
+      "formatted_ja": "令和8年7月11日"
+    },
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  },
+  {
+    "operation": "wareki_to_western",
+    "input": "reiwa 8",
+    "western_year": 2026,
+    "wareki": {
+      "era": "reiwa",
+      "era_ja": "令和",
+      "year": 8,
+      "is_first_year": false
+    },
+    "era_year_starts_on": "2026-01-01",
+    "era_year_ends_on": "2026-12-31",
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  },
+  {
+    "operation": "wareki_to_western",
+    "input": "令和元年",
+    "western_year": 2019,
+    "wareki": {
+      "era": "reiwa",
+      "era_ja": "令和",
+      "year": 1,
+      "is_first_year": true
+    },
+    "era_year_starts_on": "2019-05-01",
+    "era_year_ends_on": "2019-12-31",
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  },
+  {
+    "operation": "wareki_to_western",
+    "input": "平成31年5月1日",
+    "_error": "平成 era ended on 2019-04-30; use 令和 for 2019-05-01.",
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  },
+  {
+    "operation": "wareki_to_western",
+    "input": "そもそも日付でない",
+    "_error": "Could not parse \"そもそも日付でない\" as a Japanese era date. Accepted examples: 令和8年7月11日 / 令和8年 / R8.7.11 / reiwa 8 / 平成元年5月1日.",
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  }
+]

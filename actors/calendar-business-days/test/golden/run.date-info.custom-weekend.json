@@ -1,0 +1,48 @@
+[
+  {
+    "operation": "date_info",
+    "date": "2026-07-11",
+    "weekday": "saturday",
+    "weekday_ja": "土",
+    "wareki": {
+      "era": "reiwa",
+      "era_ja": "令和",
+      "year": 8,
+      "is_first_year": false,
+      "formatted_ja": "令和8年7月11日"
+    },
+    "is_holiday": false,
+    "holiday_name_ja": null,
+    "holiday_name_en": null,
+    "is_business_day": true,
+    "non_business_reason": null,
+    "fiscal_year": 2026,
+    "is_leap_year": false,
+    "note": null,
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  },
+  {
+    "operation": "date_info",
+    "input": "1954-12-31",
+    "_error": "1954-12-31 is outside the holiday data coverage, so holiday/business-day fields cannot be answered. For era conversion of any date since 1873-01-01, use the wareki_to_western operation. (covered_from=1955-01-01, covered_to=2027-12-31)",
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  },
+  {
+    "operation": "date_info",
+    "input": "2026-02-30",
+    "_error": "\"2026-02-30\" is not a valid calendar date. Use ISO 8601 format YYYY-MM-DD (e.g. 2026-07-11).",
+    "source": "cao_holidays",
+    "source_url": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+    "retrieved_at": "2026-07-13T00:00:00.000Z",
+    "attribution": "出典：内閣府「国民の祝日」",
+    "schema_version": "0.1.0"
+  }
+]

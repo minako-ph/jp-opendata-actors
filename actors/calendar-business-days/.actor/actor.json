@@ -1,0 +1,11 @@
+{
+  "actorSpecification": 1,
+  "name": "japan-business-days-calendar",
+  "title": "Japan Business Days & Calendar (Cabinet Office Official)",
+  "description": "Japanese business-day calculations, national holidays, and wareki (era) conversion. Official Cabinet Office holiday data, deterministic JSON output.",
+  "version": "0.1",
+  "input": "./input_schema.json",
+  "meta": {
+    "templateId": "ts-empty"
+  }
+}

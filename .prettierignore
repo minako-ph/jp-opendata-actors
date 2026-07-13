@@ -4,3 +4,4 @@ pnpm-lock.yaml
 **/fixtures/
 **/golden/
 docs/
+actors/calendar-business-days/src/generated/

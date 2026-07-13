@@ -1,0 +1,88 @@
+{
+  "title": "Japan Business Days & Calendar (Cabinet Office Official)",
+  "description": "Business-day calculations, national holidays and wareki (Japanese era) conversion, all computed from the official Cabinet Office holiday data bundled at build time (no external calls at run time). Pick an operation, fill its input list, and run. The first 50 records of every run are free.",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "operation": {
+      "title": "Operation",
+      "type": "string",
+      "description": "What to compute. date_info = full info per date (weekday, wareki, holiday, business day, fiscal year); wareki_to_western = parse Japanese era dates like 令和8年7月11日 / R8.7.11 / reiwa 8; holidays = national holidays of the given years (one record per holiday); holidays_next = next national holiday on or after from_date; business_days_add = date N business days later (negative goes backwards); business_days_count = business days between two dates, both ends included.",
+      "editor": "select",
+      "enum": [
+        "date_info",
+        "wareki_to_western",
+        "holidays",
+        "holidays_next",
+        "business_days_add",
+        "business_days_count"
+      ],
+      "enumTitles": [
+        "Date info (all-in-one)",
+        "Wareki (era) → Western date",
+        "Holidays of a year",
+        "Next holiday",
+        "Add N business days",
+        "Count business days"
+      ],
+      "prefill": "date_info"
+    },
+    "dates": {
+      "title": "Dates (for date_info)",
+      "type": "array",
+      "description": "ISO dates (YYYY-MM-DD) to describe, e.g. 2019-04-30 (last day of Heisei), 2019-05-01 (first day of Reiwa), 2026-05-06 (substitute holiday), 2026-07-13 (regular weekday). Up to 1,000 input items per run across all operations.",
+      "editor": "stringList",
+      "prefill": ["2019-04-30", "2019-05-01", "2026-05-06", "2026-07-13"]
+    },
+    "wareki_strings": {
+      "title": "Wareki strings (for wareki_to_western)",
+      "type": "array",
+      "description": "Japanese era dates in any common notation: kanji (令和8年7月11日), abbreviated (R8.7.11), or romaji (reiwa 8). Year-only inputs (令和8年 / reiwa 8) return the Western year and the date range that era year covers.",
+      "editor": "stringList"
+    },
+    "years": {
+      "title": "Years (for holidays)",
+      "type": "array",
+      "description": "4-digit years, e.g. [2026, 2027]. One output record per national holiday. Years outside the bundled data coverage produce an explicit per-item error instead of a guess.",
+      "editor": "json"
+    },
+    "from_date": {
+      "title": "From date (for holidays_next)",
+      "type": "string",
+      "description": "ISO date (YYYY-MM-DD) to search from, inclusive: if from_date itself is a holiday it is returned. When omitted, today in JST (Asia/Tokyo) is used.",
+      "editor": "textfield"
+    },
+    "items": {
+      "title": "Items (for business_days_add)",
+      "type": "array",
+      "description": "Array of {\"date\": \"YYYY-MM-DD\", \"days\": N} objects, e.g. [{\"date\": \"2026-07-17\", \"days\": 3}]. days may be negative to go backwards; |days| up to 5000. days = 0 returns the input date unchanged.",
+      "editor": "json"
+    },
+    "ranges": {
+      "title": "Ranges (for business_days_count)",
+      "type": "array",
+      "description": "Array of {\"from\": \"YYYY-MM-DD\", \"to\": \"YYYY-MM-DD\"} objects, e.g. [{\"from\": \"2026-07-01\", \"to\": \"2026-07-31\"}]. Both ends are included in the count. Each period can span up to 100 years.",
+      "editor": "json"
+    },
+    "weekend_days": {
+      "title": "Weekend days (common option)",
+      "type": "array",
+      "description": "Weekday names treated as non-business days, among: sunday, monday, tuesday, wednesday, thursday, friday, saturday. Default is [\"saturday\", \"sunday\"]. Applies to date_info, business_days_add and business_days_count.",
+      "editor": "stringList",
+      "prefill": ["saturday", "sunday"]
+    },
+    "include_national_holidays": {
+      "title": "Treat national holidays as non-business days (common option)",
+      "type": "boolean",
+      "description": "Default true. Set false to count Japanese national holidays as business days. Non-business reasons are judged in the order weekend → national_holiday → extra_holiday.",
+      "default": true
+    },
+    "extra_holidays": {
+      "title": "Extra holidays (common option)",
+      "type": "array",
+      "description": "Your own company closures as ISO dates (YYYY-MM-DD), e.g. year-end shutdown [\"2026-12-30\", \"2026-12-31\"]. Up to 100 dates. Applies to date_info, business_days_add and business_days_count.",
+      "editor": "stringList"
+    }
+  },
+  "required": ["operation"]
+}

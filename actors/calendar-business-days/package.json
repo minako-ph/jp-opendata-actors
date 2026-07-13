@@ -1,0 +1,27 @@
+{
+  "name": "@jp-opendata/actor-calendar-business-days",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "esbuild src/main.ts --bundle --platform=node --target=node22 --format=esm --banner:js=\"import{createRequire as __cr}from'node:module';const require=__cr(import.meta.url);\" --external:apify --outfile=dist/main.js",
+    "fetch-holidays": "tsx scripts/fetch-holidays.ts",
+    "build-holidays": "tsx scripts/build-holidays.ts"
+  },
+  "dependencies": {
+    "@jp-opendata/attribution": "workspace:*",
+    "@jp-opendata/billing": "workspace:*",
+    "@jp-opendata/normalize-jp": "workspace:*",
+    "apify": "^3.4.0"
+  },
+  "devDependencies": {
+    "@jp-opendata/testing": "workspace:*",
+    "esbuild": "^0.25.0",
+    "iconv-lite": "^0.6.3",
+    "tsx": "^4.20.0"
+  }
+}

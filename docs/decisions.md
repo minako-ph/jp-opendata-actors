@@ -1,5 +1,7 @@
 # decisions.md — 実装中の判断ログ（1行/件、新しいものを上に）
 
+- 2026-07-14 #1公開（japan-edinet-filings）: record-basic $0.005（Primary）・record-enriched $0.079・actor-start $0.02・無料枠3書類/runで確定。Store公開URL=apify.com/minako-ph/japan-edinet-filings。公開日=2026-07-14（90日KPI起点=2026-10-12）。.actorignore（!dist/）で全7Actorのpush時dist除外問題を解決済み
+
 - 2026-07-13 apify push が .gitignore の dist/ を除外しビルド失敗 → 全7Actorに .actorignore（!dist/）追加で解決（Apify CLI公式の force-include 方式）。第三者レビュー実証済み
 
 - 2026-07-13 #7第三者レビュー承認（review-2026-07-13-actor7・対象a3d3a92・FIX事項ゼロ）: 実装前クローンとの全ファイルdiffで既存#1〜#6変更ゼロを機械確認・第三者環境で346テスト/bundle7本/typecheck/lint/format全緑・snapshot md5一致/生成物バイト同一/コアdiff=prettierのみ・移植元golden 2019-05-01をフィールド単位照合し完全一致・prefill 4日付のsnapshot実在確認済み

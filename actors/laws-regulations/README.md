@@ -71,7 +71,7 @@ Law texts come from the [e-Gov Laws API](https://laws.e-gov.go.jp/) operated by 
 
 ## More Japan data Actors
 
-This Actor is part of a family of official-API-based Japan data Actors. See also **Japan Company Filings (EDINET Official)**, **Japan Subsidies & Grants Data (Official)**, **Japan Real Estate Transaction Prices (MLIT Official)**, and **Japan Company Data Enrichment (Official Registry)**. Check the developer profile for the full list.
+This Actor is part of a family of official-API-based Japan data Actors. See also [**Japan Company Filings (EDINET Official)**](https://apify.com/minako-ph/japan-edinet-filings), [**Japan Subsidies & Grants Data (Official)**](https://apify.com/minako-ph/japan-subsidies-grants), [**Japan Real Estate Transaction Prices (MLIT Official)**](https://apify.com/minako-ph/japan-real-estate-prices), and [**Japan Company Data Enrichment (Official Registry)**](https://apify.com/minako-ph/japan-company-enrichment). Check the developer profile for the full list.
 
 ## Contact
 

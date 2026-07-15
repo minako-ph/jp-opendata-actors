@@ -1,5 +1,6 @@
 # decisions.md — 実装中の判断ログ（1行/件、新しいものを上に）
 
+- 2026-07-15 全7Actor README の相互リンクをURL実化（ファミリー内クロスセル動線を完成。7本+柱1のStore URLへMarkdownリンク化・文面は不変。review-2026-07-15-crosslinks FIX-1）
 - 2026-07-15 #6公開前 競合スキャン（Apify直接競合は実質不在・Apify外 edinet-tools等が3標準対応）反映。READMEのNOT do節にUS-GAAP非対応を明示（JGAAP/IFRS 2標準のみ・US-GAAP文書はnull返し＋課金の実挙動を正直記載。review-2026-07-15-actor6-usgaap FIX-1）
 - 2026-07-15 #4公開前 競合スキャン（NexGenData/jungle_synthesizer=gBizINFO scraper系）反映。README第1段落を『not a scraper・name resolution・per-field golden』の3差別化で強化（review-2026-07-15-actor4-readme FIX-1）
 

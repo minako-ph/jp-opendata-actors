@@ -80,7 +80,7 @@ Data comes from the [EDINET API](https://disclosure2.edinet-fsa.go.jp/) operated
 
 ## More Japan data Actors
 
-- **Japan Financial Statements (EDINET Official)** — the numbers companion to this Actor: pass this Actor's `doc_id` values to it and get the full normalized balance sheet, income statement and cash flow with source element IDs. This Actor's `financials` are 7 headline KPIs; the companion returns the complete three statements — the two do not overlap.
+- [**Japan Financial Statements (EDINET Official)**](https://apify.com/minako-ph/japan-edinet-financials) — the numbers companion to this Actor: pass this Actor's `doc_id` values to it and get the full normalized balance sheet, income statement and cash flow with source element IDs. This Actor's `financials` are 7 headline KPIs; the companion returns the complete three statements — the two do not overlap.
 - Part of a family of official-API-based Japan data Actors (subsidies & grants, real estate transaction prices, company enrichment, laws & regulations). See the developer profile for the full list as they are published.
 
 ## Contact

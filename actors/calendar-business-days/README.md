@@ -99,7 +99,7 @@ Pay per event: **$0.003 per result record** plus $0.02 per Actor start. The **fi
 
 ## More Japan data Actors
 
-This Actor is part of a family of official-data-based Japan Actors. Typical combo: pull tender deadlines with **Japan Government Tenders Scraper + AI Extraction** and count the remaining business days to each deadline with this Actor. See also **Japan Company Filings (EDINET Official)** — structured financial filings of listed Japanese companies — and the developer profile for the full list as they are published.
+This Actor is part of a family of official-data-based Japan Actors. Typical combo: pull tender deadlines with [**Japan Government Tenders Scraper + AI Extraction**](https://apify.com/minako-ph/japan-tender-scraper) and count the remaining business days to each deadline with this Actor. See also [**Japan Company Filings (EDINET Official)**](https://apify.com/minako-ph/japan-edinet-filings) — structured financial filings of listed Japanese companies — and the developer profile for the full list as they are published.
 
 ## Contact
 

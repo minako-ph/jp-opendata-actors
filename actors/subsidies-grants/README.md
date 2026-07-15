@@ -67,7 +67,7 @@ Data comes from [gBizINFO](https://info.gbiz.go.jp/) operated by Japan's Ministr
 
 ## More Japan data Actors
 
-This Actor is part of a family of official-API-based Japan data Actors. See also **Japan Company Filings (EDINET Official)** — structured financial filings of listed Japanese companies — and **Japan Real Estate Transaction Prices (MLIT Official)** — actual quarterly transaction prices across Japan. Check the developer profile for the full list as they are published.
+This Actor is part of a family of official-API-based Japan data Actors. See also [**Japan Company Filings (EDINET Official)**](https://apify.com/minako-ph/japan-edinet-filings) — structured financial filings of listed Japanese companies — and [**Japan Real Estate Transaction Prices (MLIT Official)**](https://apify.com/minako-ph/japan-real-estate-prices) — actual quarterly transaction prices across Japan. Check the developer profile for the full list as they are published.
 
 ## Contact
 

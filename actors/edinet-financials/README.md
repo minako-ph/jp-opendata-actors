@@ -104,7 +104,7 @@ Data comes from the [EDINET API](https://disclosure2.edinet-fsa.go.jp/) operated
 
 ## More Japan data Actors
 
-- **Japan Company Filings (EDINET Official)** — discover filings: submission metadata, headline KPIs (7 values), optional English summaries. Feed its `doc_id` output into this Actor.
+- [**Japan Company Filings (EDINET Official)**](https://apify.com/minako-ph/japan-edinet-filings) — discover filings: submission metadata, headline KPIs (7 values), optional English summaries. Feed its `doc_id` output into this Actor.
 - Part of a family of official-API-based Japan data Actors (subsidies & grants, real estate transaction prices, company enrichment, laws & regulations). See the developer profile for the full list.
 
 ## Contact

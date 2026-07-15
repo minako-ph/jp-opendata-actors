@@ -76,7 +76,7 @@ Data comes from the [Real Estate Information Library](https://www.reinfolib.mlit
 
 ## More Japan data Actors
 
-This Actor is part of a family of official-API-based Japan data Actors. See also **Japan Company Filings (EDINET Official)** — structured financial filings of listed Japanese companies — and the developer profile for the full list as they are published.
+This Actor is part of a family of official-API-based Japan data Actors. See also [**Japan Company Filings (EDINET Official)**](https://apify.com/minako-ph/japan-edinet-filings) — structured financial filings of listed Japanese companies — and the developer profile for the full list as they are published.
 
 ## Contact
 

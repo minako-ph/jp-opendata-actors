@@ -1,5 +1,7 @@
 # decisions.md — 実装中の判断ログ（1行/件、新しいものを上に）
 
+- 2026-07-15 #7公開（japan-business-days-calendar）: record-basic $0.003・無料枠50/run（2026-07-13チャット側Claude承認）。KPI特例=3ヶ月$100未達でも改修・退場を適用しない（追加投資なしの凍結・掲載継続）・ファミリー6ヶ月合算$200の分母に含めない・退場検討は保守実績>0.5h/月が2ヶ月連続の場合のみ（要件追加文書§8・公開前確定）。公開日=2026-07-15（90日計測起点）
+- 2026-07-15 #6公開（japan-edinet-financials）: record-basic $0.03・無料枠3書類/runで確定（2026-07-12チャット側Claude承認: LLM不使用で原価ほぼゼロ→マージン96%超・Store競合不在・値下げ即時/値上げ14日の非対称性による高め始値）。公開日=2026-07-15（90日KPI起点=2026-10-13）
 - 2026-07-15 全7Actor README の相互リンクをURL実化（ファミリー内クロスセル動線を完成。7本+柱1のStore URLへMarkdownリンク化・文面は不変。review-2026-07-15-crosslinks FIX-1）
 - 2026-07-15 #6公開前 競合スキャン（Apify直接競合は実質不在・Apify外 edinet-tools等が3標準対応）反映。READMEのNOT do節にUS-GAAP非対応を明示（JGAAP/IFRS 2標準のみ・US-GAAP文書はnull返し＋課金の実挙動を正直記載。review-2026-07-15-actor6-usgaap FIX-1）
 - 2026-07-15 #4公開前 競合スキャン（NexGenData/jungle_synthesizer=gBizINFO scraper系）反映。README第1段落を『not a scraper・name resolution・per-field golden』の3差別化で強化（review-2026-07-15-actor4-readme FIX-1）

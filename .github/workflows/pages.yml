@@ -8,7 +8,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "web/**"
+      - 'web/**'
   workflow_dispatch:
 
 # GitHub Pages デプロイに必要な権限（最小）

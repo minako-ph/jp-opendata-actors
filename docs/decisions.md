@@ -1,5 +1,7 @@
 # decisions.md — 実装中の判断ログ（1行/件、新しいものを上に）
 
+- 2026-07-15 #4公開前 競合スキャン（NexGenData/jungle_synthesizer=gBizINFO scraper系）反映。README第1段落を『not a scraper・name resolution・per-field golden』の3差別化で強化（review-2026-07-15-actor4-readme FIX-1）
+
 - 2026-07-14 #3公開（japan-real-estate-prices）: record-basic $0.003（Primary）・actor-start $0.02・無料枠50/run・enrichedイベントなし（LLM不使用）で確定。Categories=Real estate+Developer tools+Agents。公開URL=apify.com/minako-ph/japan-real-estate-prices。公開日=2026-07-14（90日KPI起点=2026-10-12）
 - 2026-07-14 #1公開（japan-edinet-filings）: record-basic $0.005（Primary）・record-enriched $0.079・actor-start $0.02・無料枠3書類/runで確定。Store公開URL=apify.com/minako-ph/japan-edinet-filings。公開日=2026-07-14（90日KPI起点=2026-10-12）。.actorignore（!dist/）で全7Actorのpush時dist除外問題を解決済み
 

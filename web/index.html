@@ -1,0 +1,923 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Japan Open Data Actors — Official Japanese government data, structured in English</title>
+<meta name="description" content="Seven Apify Actors that turn Japan's official government data — EDINET, gBizINFO, MLIT, the corporate registry, e-Gov laws, Cabinet Office holidays — into clean English JSON. Official sources only, no scraping.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ================= tokens ================= */
+:root{
+  --paper:#FCFCFA;        /* 半紙 — cool document white */
+  --paper-dim:#F4F4EE;    /* 台紙 — row hover / code ground */
+  --ink:#1B1B1F;          /* 墨 */
+  --ink-soft:#4A4A4F;
+  --rule:#C9C9C2;         /* 罫 */
+  --rule-strong:#8A8A85;  /* 鼠 */
+  --indigo:#1D3A5F;       /* 紺 — strings, links */
+  --shu:#C73E2E;          /* 朱 — seal only, plus micro-markers */
+  --mincho:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;
+  --sans:"IBM Plex Sans","Hiragino Sans","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --frame:14px;
+  --maxw:1060px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+/* the filing frame — the whole page sits inside a document rule */
+body::before{
+  content:"";
+  position:fixed;
+  inset:var(--frame);
+  border:3px double rgba(27,27,31,.5);
+  pointer-events:none;
+  z-index:80;
+}
+::selection{background:rgba(199,62,46,.16)}
+a{color:var(--indigo)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--shu);outline-offset:3px}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 48px}
+@media (max-width:720px){.wrap{padding:0 28px}}
+
+.mono-label{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+}
+
+/* ================= header ================= */
+header.site{
+  padding:38px 0 0;
+}
+.site-bar{
+  display:flex;align-items:baseline;justify-content:space-between;gap:24px;
+  padding-bottom:18px;border-bottom:1px solid var(--ink);
+}
+.brand{display:flex;align-items:baseline;gap:14px;text-decoration:none;color:var(--ink)}
+.brand .jp{font-family:var(--mincho);font-weight:600;font-size:19px;letter-spacing:.08em}
+.brand .en{font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--ink-soft)}
+nav.top{display:flex;gap:26px;flex-wrap:wrap}
+nav.top a{
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-soft);text-decoration:none;
+}
+nav.top a:hover{color:var(--shu)}
+@media (max-width:720px){nav.top{display:none}}
+
+/* ================= hero ================= */
+.hero{padding:78px 0 64px;position:relative}
+.hero-grid{display:grid;grid-template-columns:1fr 64px;gap:32px;align-items:start}
+@media (max-width:900px){.hero-grid{grid-template-columns:1fr}}
+.hero .eyebrow{
+  display:flex;align-items:center;gap:14px;margin-bottom:34px;
+}
+.hero .eyebrow .tick{width:34px;height:1px;background:var(--ink)}
+h1{
+  font-family:var(--mincho);
+  font-weight:500;
+  font-size:clamp(34px,5.4vw,58px);
+  line-height:1.22;
+  letter-spacing:.005em;
+  max-width:17em;
+}
+h1 em{font-style:normal;border-bottom:3px solid rgba(199,62,46,.55)}
+.hero-sub{
+  margin-top:28px;max-width:36em;font-size:17px;color:var(--ink-soft);
+}
+.hero-sub strong{color:var(--ink);font-weight:600}
+/* vertical japanese strip */
+.v-strip{
+  writing-mode:vertical-rl;
+  font-family:var(--mincho);
+  font-weight:500;
+  font-size:20px;
+  letter-spacing:.34em;
+  color:var(--ink);
+  border-left:1px solid var(--rule);
+  padding-left:18px;
+  justify-self:end;
+}
+@media (max-width:900px){.v-strip{display:none}}
+
+/* document meta register */
+.doc-meta{
+  margin-top:56px;
+  border-top:1px solid var(--ink);
+  position:relative;
+}
+.doc-meta table{width:100%;border-collapse:collapse}
+.doc-meta td{
+  border-bottom:1px solid var(--rule);
+  padding:13px 0;
+  vertical-align:baseline;
+}
+.doc-meta td.k{
+  width:220px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-soft);
+  padding-right:24px;white-space:nowrap;
+}
+.doc-meta td.k .kj{
+  font-family:var(--mincho);font-size:13px;letter-spacing:.3em;color:var(--ink);
+  margin-right:10px;text-transform:none;
+}
+.doc-meta td.v{font-size:15px}
+@media (max-width:720px){
+  .doc-meta td{display:block;border-bottom:0;padding:6px 0}
+  .doc-meta tr{display:block;border-bottom:1px solid var(--rule);padding:8px 0}
+  .doc-meta td.k{width:auto}
+}
+/* the seal */
+.seal{
+  position:absolute;
+  right:-6px;top:-74px;
+  width:132px;height:132px;
+  transform:rotate(-7deg);
+  mix-blend-mode:multiply;
+  opacity:.92;
+  pointer-events:none;
+}
+@media (max-width:900px){.seal{width:104px;height:104px;top:-58px}}
+.seal .ring-text{
+  font-family:var(--mono);font-size:9.2px;letter-spacing:.32em;fill:var(--shu);
+}
+.seal .kanji{
+  font-family:var(--mincho);font-weight:600;font-size:34px;letter-spacing:.1em;fill:var(--shu);
+}
+.hero-disclaim{
+  margin-top:16px;
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;color:var(--rule-strong);
+}
+.hero-cta{margin-top:36px;display:flex;gap:16px;flex-wrap:wrap}
+.btn{
+  display:inline-block;text-decoration:none;
+  font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  padding:13px 26px;border:1px solid var(--ink);color:var(--ink);
+  background:transparent;
+  transition:background .18s ease,color .18s ease;
+}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn.primary:hover{background:var(--indigo)}
+.btn:not(.primary):hover{background:var(--paper-dim)}
+
+/* ================= section chrome ================= */
+section.sec{padding:84px 0 0}
+.sec .wrap{position:relative}
+.sec-head{
+  display:flex;align-items:baseline;gap:16px;
+  border-top:1px solid var(--ink);
+  padding-top:14px;margin-bottom:44px;
+}
+.sec-head .no{
+  font-family:var(--mincho);font-size:14px;letter-spacing:.28em;color:var(--ink);white-space:nowrap;
+}
+.sec-head .lbl{
+  font-family:var(--mono);font-size:11px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--rule-strong);
+}
+.sec h2{
+  font-family:var(--mincho);font-weight:500;
+  font-size:clamp(26px,3.4vw,38px);line-height:1.3;
+  max-width:22em;margin-bottom:18px;
+}
+.sec .lede{max-width:38em;color:var(--ink-soft);font-size:16.5px}
+/* vertical marker on the right edge of each section */
+.sec .v-mark{
+  position:absolute;top:12px;right:-40px;
+  writing-mode:vertical-rl;
+  font-family:var(--mincho);font-size:13px;letter-spacing:.42em;
+  color:var(--rule-strong);
+}
+@media (max-width:1180px){.sec .v-mark{display:none}}
+
+/* ================= transform ledger ================= */
+.ledger{
+  margin-top:48px;
+  display:grid;grid-template-columns:1fr 180px 1.25fr;gap:0;
+  border:1px solid var(--ink);
+}
+@media (max-width:940px){
+  .ledger{grid-template-columns:1fr}
+}
+.ledger .pane{padding:26px 28px 30px;min-width:0}
+.ledger .pane.src{border-right:1px solid var(--rule)}
+.ledger .pane-title{
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--rule);
+}
+.ledger .pane-title .kj{font-family:var(--mincho);font-size:15px;letter-spacing:.24em}
+.doc-lines{font-family:var(--mincho);font-size:15.5px;line-height:2.15;letter-spacing:.02em}
+.doc-lines .row{display:flex;gap:18px;border-bottom:1px dotted var(--rule)}
+.doc-lines .row:last-child{border-bottom:0}
+.doc-lines .lab{color:var(--ink-soft);white-space:nowrap;min-width:6.5em}
+.mid{
+  border-right:1px solid var(--rule);
+  display:flex;flex-direction:column;justify-content:center;gap:10px;
+  padding:26px 18px;background:var(--paper-dim);
+}
+@media (max-width:940px){
+  .ledger .pane.src{border-right:0;border-bottom:1px solid var(--rule)}
+  .mid{border-right:0;border-bottom:1px solid var(--rule);flex-direction:row;flex-wrap:wrap}
+}
+.chip{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+  color:var(--ink-soft);
+  border:1px solid var(--rule);background:var(--paper);
+  padding:6px 9px;text-align:center;white-space:nowrap;
+}
+.chip b{color:var(--ink);font-weight:500}
+pre.json{
+  font-family:var(--mono);font-size:12.8px;line-height:1.78;
+  overflow-x:auto;white-space:pre;
+  color:var(--ink);
+}
+pre.json .k{color:var(--ink);font-weight:500}
+pre.json .s{color:var(--indigo)}
+pre.json .n{color:var(--ink);font-weight:600}
+pre.json .nul{color:var(--rule-strong);font-style:italic}
+pre.json .p{color:var(--rule-strong)}
+.ledger-note{
+  margin-top:14px;
+  font-size:14px;color:var(--ink-soft);max-width:44em;
+}
+.ledger-note .null-word{font-family:var(--mono);font-size:12.5px;border-bottom:1px solid var(--shu)}
+
+/* ================= actor index ================= */
+.index-list{margin-top:8px;border-top:1px solid var(--ink)}
+.actor-row{
+  display:grid;
+  grid-template-columns:64px 1.5fr .8fr 190px;
+  gap:24px;align-items:baseline;
+  padding:24px 8px 24px 0;
+  border-bottom:1px solid var(--rule);
+  text-decoration:none;color:var(--ink);
+  transition:background .15s ease;
+  position:relative;
+}
+.actor-row:hover{background:var(--paper-dim)}
+.actor-row .no{
+  font-family:var(--mincho);font-size:22px;font-weight:500;color:var(--rule-strong);
+  transition:color .15s ease;
+}
+.actor-row:hover .no{color:var(--shu)}
+.actor-row .name{
+  font-family:var(--mincho);font-weight:600;font-size:19px;line-height:1.35;display:block;
+}
+.actor-row .desc{display:block;margin-top:6px;font-size:14.5px;color:var(--ink-soft);max-width:34em}
+.actor-row .src{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;color:var(--ink-soft);line-height:1.9}
+.actor-row .price{
+  font-family:var(--mono);font-size:12.5px;text-align:right;line-height:1.9;color:var(--ink);
+  white-space:nowrap;
+}
+.actor-row .price .sub{display:block;color:var(--rule-strong);font-size:10.5px}
+@media (max-width:940px){
+  .actor-row{grid-template-columns:44px 1fr;grid-template-rows:auto auto}
+  .actor-row .src{grid-column:2;}
+  .actor-row .price{grid-column:2;text-align:left}
+}
+.pipe-note{
+  display:flex;gap:14px;align-items:baseline;
+  padding:18px 8px 18px 88px;
+  border-bottom:1px solid var(--rule);
+  background:var(--paper-dim);
+  font-size:14px;color:var(--ink-soft);
+}
+.pipe-note code{font-family:var(--mono);font-size:12px;color:var(--ink)}
+.pipe-note .mark{font-family:var(--mono);color:var(--shu);font-size:12px;letter-spacing:.1em;white-space:nowrap}
+@media (max-width:940px){.pipe-note{padding-left:8px}}
+.index-foot{
+  margin-top:16px;font-family:var(--mono);font-size:11.5px;color:var(--rule-strong);letter-spacing:.04em;
+}
+
+/* ================= principles ================= */
+.pillars{
+  margin-top:52px;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:0;
+  border:1px solid var(--ink);
+}
+@media (max-width:900px){.pillars{grid-template-columns:1fr}}
+.pillar{padding:34px 30px 38px;border-right:1px solid var(--rule)}
+.pillar:last-child{border-right:0}
+@media (max-width:900px){
+  .pillar{border-right:0;border-bottom:1px solid var(--rule)}
+  .pillar:last-child{border-bottom:0}
+}
+.pillar .glyph{
+  font-family:var(--mincho);font-weight:600;font-size:64px;line-height:1;
+  color:var(--ink);margin-bottom:22px;
+}
+.pillar h3{
+  font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+  font-weight:500;margin-bottom:14px;
+}
+.pillar p{font-size:14.5px;color:var(--ink-soft)}
+.pillar p code{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+
+/* honest box */
+.honest{
+  margin-top:56px;
+  border:1px solid var(--ink);
+  background:var(--paper-dim);
+  padding:36px 40px 40px;
+  position:relative;
+}
+@media (max-width:720px){.honest{padding:28px 24px}}
+.honest .h-title{
+  font-family:var(--mincho);font-weight:600;font-size:22px;margin-bottom:8px;
+}
+.honest .h-sub{font-size:14.5px;color:var(--ink-soft);margin-bottom:26px;max-width:40em}
+.honest ul{
+  list-style:none;
+  display:grid;grid-template-columns:1fr 1fr;gap:14px 40px;
+}
+@media (max-width:820px){.honest ul{grid-template-columns:1fr}}
+.honest li{
+  font-size:14.5px;color:var(--ink);
+  padding-left:22px;position:relative;
+}
+.honest li::before{
+  content:"×";
+  position:absolute;left:0;top:0;
+  font-family:var(--mono);color:var(--shu);font-size:13px;
+}
+.honest li b{font-weight:600}
+
+/* ================= agents ================= */
+.agent-grid{
+  margin-top:48px;
+  display:grid;grid-template-columns:1fr 1.1fr;gap:56px;align-items:start;
+}
+@media (max-width:940px){.agent-grid{grid-template-columns:1fr;gap:36px}}
+.agent-points{list-style:none;border-top:1px solid var(--ink)}
+.agent-points li{
+  padding:18px 0;border-bottom:1px solid var(--rule);
+  display:flex;gap:20px;align-items:baseline;
+}
+.agent-points .kj{
+  font-family:var(--mincho);font-size:15px;letter-spacing:.14em;white-space:nowrap;color:var(--ink);
+  min-width:4.5em;
+}
+.agent-points .tx{font-size:14.5px;color:var(--ink-soft)}
+.agent-points .tx code{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+.term{
+  border:1px solid var(--ink);
+  background:var(--ink);color:#E8E8E2;
+  font-family:var(--mono);font-size:12.5px;line-height:1.9;
+  padding:24px 26px;overflow-x:auto;white-space:pre;
+}
+.term .dim{color:#8E8E96}
+.term .in{color:#E8E8E2}
+.term .out{color:#A9C4E4}
+.term .ok{color:#D98A7E}
+
+/* ================= pricing ================= */
+.price-intro{margin-top:6px}
+.price-table{width:100%;border-collapse:collapse;margin-top:44px;border-top:1px solid var(--ink)}
+.price-table th{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--rule-strong);font-weight:500;text-align:left;
+  padding:12px 16px 12px 0;border-bottom:1px solid var(--ink);
+}
+.price-table th:last-child,.price-table td:last-child{text-align:right;padding-right:0}
+.price-table td{
+  padding:16px 16px 16px 0;border-bottom:1px solid var(--rule);
+  font-size:14.5px;vertical-align:baseline;
+}
+.price-table td.actor{font-family:var(--mincho);font-weight:600;font-size:15.5px}
+.price-table td.num{font-family:var(--mono);font-size:13px;white-space:nowrap}
+.price-table td .u{color:var(--rule-strong);font-size:11px}
+.price-table .muted{color:var(--rule-strong)}
+@media (max-width:820px){
+  .price-scroll{overflow-x:auto}
+  .price-table{min-width:640px}
+}
+.price-notes{
+  margin-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:14px 40px;max-width:56em;
+}
+@media (max-width:820px){.price-notes{grid-template-columns:1fr}}
+.price-notes p{font-size:13.5px;color:var(--ink-soft)}
+.price-notes p b{color:var(--ink);font-weight:600}
+
+/* ================= footer ================= */
+footer.site{
+  margin-top:96px;
+  border-top:1px solid var(--ink);
+  padding:52px 0 64px;
+}
+.foot-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:56px}
+@media (max-width:820px){.foot-grid{grid-template-columns:1fr;gap:36px}}
+.attr-title{
+  font-family:var(--mincho);font-size:15px;letter-spacing:.2em;margin-bottom:18px;
+}
+.attr-lines{list-style:none}
+.attr-lines li{
+  font-family:var(--mincho);
+  font-size:12.5px;line-height:1.9;color:var(--ink-soft);
+  padding:9px 0;border-bottom:1px dotted var(--rule);
+}
+.attr-lines li .src-tag{
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--rule-strong);
+  display:block;text-transform:uppercase;margin-bottom:2px;
+}
+.foot-meta p{font-size:14px;color:var(--ink-soft);margin-bottom:16px;max-width:30em}
+.foot-meta p b{color:var(--ink)}
+.foot-bottom{
+  margin-top:48px;padding-top:20px;border-top:1px solid var(--rule);
+  display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--rule-strong);
+}
+
+/* ================= reveal motion ================= */
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .7s ease,transform .7s ease}
+.reveal.visible{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  .reveal{opacity:1;transform:none;transition:none}
+}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <div class="site-bar">
+      <a class="brand" href="#top">
+        <span class="jp">日本公的データ</span>
+        <span class="en">JP OPEN DATA ACTORS</span>
+      </a>
+      <nav class="top" aria-label="Sections">
+        <a href="#transform">Structure</a>
+        <a href="#actors">Actors</a>
+        <a href="#principles">Principles</a>
+        <a href="#agents">For agents</a>
+        <a href="#pricing">Pricing</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-grid">
+        <div>
+          <div class="eyebrow">
+            <span class="tick" aria-hidden="true"></span>
+            <span class="mono-label">Apify Actor family · seven Actors · pay-per-event</span>
+          </div>
+          <h1>Official Japanese government data, structured for the <em>English-speaking</em> world.</h1>
+          <p class="hero-sub">
+            Filings, financial statements, subsidies, real-estate prices, company records, laws —
+            and the business-day calendar — read from <strong>official government sources only</strong>
+            and returned as clean snake_case JSON, with every Japanese original preserved.
+            <strong>No scraping. No broken selectors.</strong>
+            Tested against frozen datasets on every release.
+          </p>
+          <div class="hero-cta">
+            <a class="btn primary" href="#actors">Browse the seven Actors</a>
+            <a class="btn" href="https://apify.com/store?search=japan%20official%20api" rel="noopener">Find us on Apify Store</a>
+          </div>
+        </div>
+        <div class="v-strip" aria-hidden="true">日本公的データ、英語構造化</div>
+      </div>
+
+      <div class="doc-meta reveal">
+        <svg class="seal" viewBox="0 0 132 132" aria-hidden="true">
+          <defs>
+            <path id="sealcircle" d="M66,66 m-48,0 a48,48 0 1,1 96,0 a48,48 0 1,1 -96,0"/>
+          </defs>
+          <circle cx="66" cy="66" r="62" fill="none" stroke="#C73E2E" stroke-width="2.6"/>
+          <circle cx="66" cy="66" r="50" fill="none" stroke="#C73E2E" stroke-width="1"/>
+          <text class="ring-text"><textPath href="#sealcircle">OFFICIAL API BASED · NO SCRAPING · GOLDEN TESTED ·</textPath></text>
+          <text class="kanji" x="66" y="78" text-anchor="middle">典拠</text>
+        </svg>
+        <table>
+          <tr>
+            <td class="k"><span class="kj">典拠</span>Sources</td>
+            <td class="v">FSA EDINET · METI gBizINFO · MLIT Real Estate Library · NTA Corporate Registry · e-Gov Laws (Digital Agency) · Cabinet Office National Holidays</td>
+          </tr>
+          <tr>
+            <td class="k"><span class="kj">方式</span>Method</td>
+            <td class="v">Official APIs and official published datasets only — no DOM scraping, no headless browsers, nothing that silently breaks</td>
+          </tr>
+          <tr>
+            <td class="k"><span class="kj">検証</span>Quality</td>
+            <td class="v">Golden regression against frozen real API responses in CI; unverified values become <code style="font-family:var(--mono);font-size:13px">null</code>, never guesses</td>
+          </tr>
+          <tr>
+            <td class="k"><span class="kj">課金</span>Billing</td>
+            <td class="v">Pay-per-event with prices printed in every README; the first records of every run are free</td>
+          </tr>
+        </table>
+        <p class="hero-disclaim">Independent Actors. Not endorsed by the FSA, METI, MLIT, the NTA, the Digital Agency, or the Cabinet Office.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TRANSFORM ============ -->
+  <section class="sec" id="transform">
+    <div class="wrap">
+      <span class="v-mark" aria-hidden="true">第一節　構造化</span>
+      <div class="sec-head">
+        <span class="no">第一節</span>
+        <span class="lbl">What these Actors do</span>
+      </div>
+      <h2>From 有価証券報告書 to snake_case.</h2>
+      <p class="lede">
+        Japan's public data is rich, official — and hard to use from outside: Japanese-only fields,
+        wareki dates, full-width digits, amounts in thousands of yen. Each Actor does one job:
+        turn an official record into JSON you can put straight into a pipeline.
+      </p>
+
+      <div class="ledger reveal">
+        <div class="pane src">
+          <div class="pane-title">
+            <span class="kj">原文</span>
+            <span class="mono-label">as filed · EDINET</span>
+          </div>
+          <div class="doc-lines">
+            <div class="row"><span class="lab">書類名</span><span>有価証券報告書－第70期</span></div>
+            <div class="row"><span class="lab">提出者</span><span>山口放送株式会社</span></div>
+            <div class="row"><span class="lab">提出日</span><span>令和8年6月30日</span></div>
+            <div class="row"><span class="lab">事業年度</span><span>2025/04/01－2026/03/31</span></div>
+            <div class="row"><span class="lab">売上高</span><span>4,928,920千円</span></div>
+            <div class="row"><span class="lab">当期純利益</span><span>100,436千円</span></div>
+            <div class="row"><span class="lab">従業員数</span><span>120名</span></div>
+          </div>
+        </div>
+        <div class="mid" aria-label="Normalization rules">
+          <span class="chip">和暦 → <b>ISO 8601</b></span>
+          <span class="chip">千円 → <b>raw JPY</b></span>
+          <span class="chip">全角 → <b>normalized</b></span>
+          <span class="chip">原文 → <b>*_ja kept</b></span>
+          <span class="chip">未記載 → <b>null</b></span>
+        </div>
+        <div class="pane">
+          <div class="pane-title">
+            <span class="kj">出力</span>
+            <span class="mono-label">one dataset item · JSON</span>
+          </div>
+<pre class="json"><span class="p">{</span>
+  <span class="k">"doc_id"</span><span class="p">:</span> <span class="s">"S100YIZC"</span><span class="p">,</span>
+  <span class="k">"filer_name_ja"</span><span class="p">:</span> <span class="s">"山口放送株式会社"</span><span class="p">,</span>
+  <span class="k">"filer_name_en"</span><span class="p">:</span> <span class="nul">null</span><span class="p">,</span>
+  <span class="k">"doc_type"</span><span class="p">:</span> <span class="s">"Annual Securities Report"</span><span class="p">,</span>
+  <span class="k">"period_start"</span><span class="p">:</span> <span class="s">"2025-04-01"</span><span class="p">,</span>
+  <span class="k">"period_end"</span><span class="p">:</span> <span class="s">"2026-03-31"</span><span class="p">,</span>
+  <span class="k">"submitted_at"</span><span class="p">:</span> <span class="s">"2026-06-30T09:00:00+09:00"</span><span class="p">,</span>
+  <span class="k">"financials"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="k">"net_sales"</span><span class="p">:</span> <span class="n">4928920000</span><span class="p">,</span>
+    <span class="k">"net_income"</span><span class="p">:</span> <span class="n">100436000</span><span class="p">,</span>
+    <span class="k">"number_of_employees"</span><span class="p">:</span> <span class="n">120</span><span class="p">,</span>
+    <span class="k">"financials_basis"</span><span class="p">:</span> <span class="s">"non_consolidated"</span>
+  <span class="p">},</span>
+  <span class="k">"attribution"</span><span class="p">:</span> <span class="s">"出典：金融庁 EDINET"</span>
+<span class="p">}</span></pre>
+        </div>
+      </div>
+      <p class="ledger-note">
+        Real output from the Japan Company Filings Actor. Note the <span class="null-word">null</span>:
+        this filer registers no English name, so none is invented. Every generated or derived value in the
+        family carries <code style="font-family:var(--mono);font-size:12.5px">confidence</code> and
+        <code style="font-family:var(--mono);font-size:12.5px">method</code> — you always know whether a
+        field came from the API, a rule, or a model.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ ACTOR INDEX ============ -->
+  <section class="sec" id="actors">
+    <div class="wrap">
+      <span class="v-mark" aria-hidden="true">第二節　収載目録</span>
+      <div class="sec-head">
+        <span class="no">第二節</span>
+        <span class="lbl">The seven Actors</span>
+      </div>
+      <h2>One Actor per source. Priced per record.</h2>
+      <p class="lede">
+        Each Actor covers one official system, with a flat input schema, a prefilled example that
+        returns results in seconds, and a README that states what it does <em>not</em> do before what it does.
+      </p>
+
+      <div class="index-list reveal">
+        <a class="actor-row" href="https://apify.com/minako-ph/japan-edinet-filings" rel="noopener">
+          <span class="no">壱</span>
+          <span>
+            <span class="name">Japan Company Filings <small style="font-weight:400">(EDINET Official)</small></span>
+            <span class="desc">Discover annual &amp; semi-annual securities reports: submission metadata, seven headline financial KPIs, optional English summaries verified verbatim against the filing text.</span>
+          </span>
+          <span class="src">FSA · EDINET API v2<br>金融庁 有価証券報告書</span>
+          <span class="price">$0.005 / filing<span class="sub">enriched $0.079</span></span>
+        </a>
+        <a class="actor-row" href="https://apify.com/minako-ph/japan-subsidies-grants" rel="noopener">
+          <span class="no">弐</span>
+          <span>
+            <span class="name">Japan Subsidies &amp; Grants Data <small style="font-weight:400">(Official)</small></span>
+            <span class="desc">Which Japanese companies received which government subsidies — by corporate number, company name, or ministry. Amounts in JPY, ministry names in English. No LLM anywhere.</span>
+          </span>
+          <span class="src">METI · gBizINFO v2<br>経済産業省 補助金</span>
+          <span class="price">$0.004 / record</span>
+        </a>
+        <a class="actor-row" href="https://apify.com/minako-ph/japan-real-estate-prices" rel="noopener">
+          <span class="no">参</span>
+          <span>
+            <span class="name">Japan Real Estate Transaction Prices <small style="font-weight:400">(MLIT Official)</small></span>
+            <span class="desc">Quarterly actual and contract prices across all 47 prefectures, bilingual by source. Derived ㎡ unit prices, optional municipality × quarter aggregates at no extra charge.</span>
+          </span>
+          <span class="src">MLIT · Real Estate Library<br>国土交通省 取引価格</span>
+          <span class="price">$0.003 / record<span class="sub">aggregates free</span></span>
+        </a>
+        <a class="actor-row" href="https://apify.com/minako-ph/japan-company-enrichment" rel="noopener">
+          <span class="no">肆</span>
+          <span>
+            <span class="name">Japan Company Data Enrichment <small style="font-weight:400">(Official Registry)</small></span>
+            <span class="desc">Corporate number lookup and firmographics: capital, employees, industry, establishment date, subsidy / procurement / patent counts. English names only when officially registered.</span>
+          </span>
+          <span class="src">gBizINFO + NTA Registry<br>法人番号・Gビズインフォ</span>
+          <span class="price">$0.006 / company<span class="sub">enriched $0.019</span></span>
+        </a>
+        <a class="actor-row" href="https://apify.com/minako-ph/japan-laws-regulations" rel="noopener">
+          <span class="no">伍</span>
+          <span>
+            <span class="name">Japan Laws &amp; Regulations <small style="font-weight:400">(e-Gov Official)</small></span>
+            <span class="desc">Full text of any Japanese law as a structured article tree, at any point in time. Optional English reference translations — with an honest pointer to the official JLT database first.</span>
+          </span>
+          <span class="src">Digital Agency · e-Gov API v2<br>デジタル庁 法令</span>
+          <span class="price">$0.004 / article<span class="sub">translated $0.029</span></span>
+        </a>
+        <a class="actor-row" href="https://apify.com/minako-ph/japan-edinet-financials" rel="noopener">
+          <span class="no">陸</span>
+          <span>
+            <span class="name">Japan Financial Statements <small style="font-weight:400">(EDINET Official)</small></span>
+            <span class="desc">Normalized balance sheet, income statement and cash flow — Japan GAAP and IFRS — with the source XBRL element ID attached to every number, so each value is machine-verifiable.</span>
+          </span>
+          <span class="src">FSA · EDINET API v2<br>金融庁 財務三表</span>
+          <span class="price">$0.03 / report<span class="sub">prior year included</span></span>
+        </a>
+        <a class="actor-row" href="https://apify.com/minako-ph/japan-business-days-calendar" rel="noopener">
+          <span class="no">漆</span>
+          <span>
+            <span class="name">Japan Business Days &amp; Calendar <small style="font-weight:400">(Cabinet Office Official)</small></span>
+            <span class="desc">Check, add and count Japanese business days — national holidays plus your own company closures — and convert wareki era dates both ways: 令和8年7月11日, R8.7.11 and reiwa 8 all parse. Deterministic, no LLM, no runtime API calls.</span>
+          </span>
+          <span class="src">Cabinet Office · holiday data<br>内閣府 国民の祝日</span>
+          <span class="price">$0.003 / record<span class="sub">deterministic · no LLM</span></span>
+        </a>
+        <div class="pipe-note">
+          <span class="mark">PIPELINE ▸</span>
+          <span>壱 discovers filings, 陸 extracts the statements: pass <code>doc_id</code> values from Company Filings
+          straight into Financial Statements. Headline KPIs and the full three statements deliberately don't overlap —
+          you never pay twice for the same field.</span>
+        </div>
+        <div class="pipe-note">
+          <span class="mark">PIPELINE ▸</span>
+          <span>漆 turns any date the family emits into deadline math: feed a filing or tender deadline into
+          Business Days &amp; Calendar to count the working days you have left — substitute holidays and the
+          2019 era boundary handled deterministically.</span>
+        </div>
+      </div>
+      <p class="index-foot">Actors are published in phases — the Apify developer profile lists what is live today.</p>
+    </div>
+  </section>
+
+  <!-- ============ PRINCIPLES ============ -->
+  <section class="sec" id="principles">
+    <div class="wrap">
+      <span class="v-mark" aria-hidden="true">第三節　三原則</span>
+      <div class="sec-head">
+        <span class="no">第三節</span>
+        <span class="lbl">Why trust this family</span>
+      </div>
+      <h2>Three principles, engineered in — not written on.</h2>
+
+      <div class="pillars reveal">
+        <div class="pillar">
+          <div class="glyph">堅</div>
+          <h3>Built not to break</h3>
+          <p>
+            No DOM selectors exist to break: every byte comes from a documented government API
+            or an official published dataset, fetched serially with per-source rate limits and
+            exponential backoff. One bad record never kills a run — failures are output as
+            explicit <code>_error</code> rows, unbilled.
+          </p>
+        </div>
+        <div class="pillar">
+          <div class="glyph">双</div>
+          <h3>Bilingual by design</h3>
+          <p>
+            English snake_case fields are canonical; the Japanese original always rides along in
+            <code>*_ja</code>. Wareki dates become ISO 8601, thousands-of-yen become raw JPY,
+            full-width digits are normalized — and every release is regression-tested against
+            frozen real API responses.
+          </p>
+        </div>
+        <div class="pillar">
+          <div class="glyph">直</div>
+          <h3>Honest about limits</h3>
+          <p>
+            Every README opens with a &ldquo;What this does NOT do&rdquo; section. Values a source
+            doesn't report are <code>null</code>, never estimated. Anything a model generated is
+            labeled <code>method: "llm"</code> with a confidence score — and verified against the
+            source text before it ships.
+          </p>
+        </div>
+      </div>
+
+      <div class="honest reveal">
+        <div class="h-title">What this family does not do</div>
+        <p class="h-sub">The same list we print at the top of every README — because a data product that
+        oversells is a data product you can't build on.</p>
+        <ul>
+          <li><b>No scraping, ever.</b> If an official API doesn't expose it, we don't have it.</li>
+          <li><b>Not exhaustive.</b> Coverage is exactly what each ministry publishes — no more.</li>
+          <li><b>No guessed numbers.</b> Unmapped, ambiguous, or bracketed values return <b>null</b>.</li>
+          <li><b>No invented English names.</b> Registry English or null; transliterations are opt-in and labeled.</li>
+          <li><b>No bulk law corpus.</b> Sequential full-corpus downloads are prohibited upstream; we point you to the official bulk XML instead.</li>
+          <li><b>Not the only holiday list.</b> Plain holiday lists have free alternatives; the calendar Actor is for business-day math, wareki parsing, and custom closures. Dates outside its covered range return explicit errors, never guesses.</li>
+          <li><b>Not advice.</b> Summaries and translations are reference material — not investment or legal advice.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ AGENTS ============ -->
+  <section class="sec" id="agents">
+    <div class="wrap">
+      <span class="v-mark" aria-hidden="true">第四節　機械可読</span>
+      <div class="sec-head">
+        <span class="no">第四節</span>
+        <span class="lbl">For AI agents</span>
+      </div>
+      <h2>Legible to agents, not just to people.</h2>
+      <p class="lede">
+        Every Actor is enabled for agentic users on Apify and shaped for tool calls:
+        an agent can discover, evaluate, and run one — including payment — without a human in the loop.
+        Deadline math and era conversion, the classic LLM stumbling blocks, are delegated to a
+        deterministic tool instead of guessed.
+      </p>
+
+      <div class="agent-grid reveal">
+        <ul class="agent-points">
+          <li><span class="kj">入力最小</span><span class="tx">Flat input schemas with the fewest possible required fields — prefills alone return meaningful results.</span></li>
+          <li><span class="kj">即応</span><span class="tx">Default inputs answer in about 30 seconds, with hard per-run caps so a tool call can't run away.</span></li>
+          <li><span class="kj">構造出力</span><span class="tx">Small, predictable JSON records — schema-versioned, with <code>element_map</code> and <code>coverage</code> where numbers need verifying.</span></li>
+          <li><span class="kj">価格明示</span><span class="tx">Per-event prices are written in the README an agent reads before it runs — no surprises, and x402 autonomous payment is enabled.</span></li>
+        </ul>
+        <div class="term" role="img" aria-label="An AI agent discovering and running the Financial Statements Actor"><span class="dim">// how an agent finds this family</span>
+<span class="in">agent&gt;</span> search-actors <span class="out">"japan financial statements"</span>
+<span class="in">agent&gt;</span> fetch-actor-details <span class="out">japan-edinet-financials</span>
+       <span class="dim">→ inputs: doc_ids[] · price: $0.03/record · free: 3</span>
+<span class="in">agent&gt;</span> call <span class="out">{"doc_ids": ["S100YN9E"]}</span>
+       <span class="ok">← 1 record · 27/28 fields mapped · element_map attached</span>
+
+<span class="dim">// then hands the date math to the calendar</span>
+<span class="in">agent&gt;</span> call <span class="out">japan-business-days-calendar</span> <span class="out">{"operation": "date_info",
+       "dates": ["2026-07-20"]}</span>
+       <span class="ok">← 1 record · is_business_day: false · 海の日 (Marine Day) · 令和8年</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PRICING ============ -->
+  <section class="sec" id="pricing">
+    <div class="wrap">
+      <span class="v-mark" aria-hidden="true">第五節　価格表</span>
+      <div class="sec-head">
+        <span class="no">第五節</span>
+        <span class="lbl">Pricing</span>
+      </div>
+      <h2>Pay per event. Try before you pay.</h2>
+      <p class="lede price-intro">
+        Every Actor starts at <strong>$0.02 per run</strong>, then charges only for the records it
+        actually delivers. Error rows are never billed.
+      </p>
+
+      <div class="price-scroll reveal">
+        <table class="price-table">
+          <thead>
+            <tr>
+              <th>Actor</th>
+              <th>Per record</th>
+              <th>LLM tier <span style="letter-spacing:0">(opt-in)</span></th>
+              <th>Free every run</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="actor">Company Filings</td>
+              <td class="num">$0.005 <span class="u">/ filing</span></td>
+              <td class="num">$0.079 <span class="u">enriched summary</span></td>
+              <td class="num">3 documents</td>
+            </tr>
+            <tr>
+              <td class="actor">Financial Statements</td>
+              <td class="num">$0.03 <span class="u">/ annual report</span></td>
+              <td class="num muted">— no LLM by design</td>
+              <td class="num">3 documents</td>
+            </tr>
+            <tr>
+              <td class="actor">Subsidies &amp; Grants</td>
+              <td class="num">$0.004 <span class="u">/ subsidy record</span></td>
+              <td class="num muted">— no LLM by design</td>
+              <td class="num">50 records</td>
+            </tr>
+            <tr>
+              <td class="actor">Real Estate Prices</td>
+              <td class="num">$0.003 <span class="u">/ transaction</span></td>
+              <td class="num muted">— aggregates free</td>
+              <td class="num">50 records</td>
+            </tr>
+            <tr>
+              <td class="actor">Company Enrichment</td>
+              <td class="num">$0.006 <span class="u">/ company</span></td>
+              <td class="num">$0.019 <span class="u">enriched</span></td>
+              <td class="num">20 companies</td>
+            </tr>
+            <tr>
+              <td class="actor">Laws &amp; Regulations</td>
+              <td class="num">$0.004 <span class="u">/ article</span></td>
+              <td class="num">$0.029 <span class="u">translated</span></td>
+              <td class="num">20 articles</td>
+            </tr>
+            <tr>
+              <td class="actor">Business Days &amp; Calendar</td>
+              <td class="num">$0.003 <span class="u">/ record</span></td>
+              <td class="num muted">— no LLM by design</td>
+              <td class="num">50 records</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="price-notes">
+        <p><b>The free allowance is a real evaluation,</b> not a teaser: enough records to judge the output quality, not enough to run a business on.</p>
+        <p><b>Charge limits are respected gracefully.</b> If a run hits the maximum spend you set, it stops cleanly and keeps every record already fetched.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="attr-title">出典表記 — Attribution</div>
+        <ul class="attr-lines">
+          <li><span class="src-tag">EDINET</span>出典：金融庁 EDINET</li>
+          <li><span class="src-tag">gBizINFO</span>出典：経済産業省 Gビズインフォ</li>
+          <li><span class="src-tag">e-Gov</span>出典：e-Gov法令検索（デジタル庁）</li>
+          <li><span class="src-tag">Cabinet Office</span>出典：内閣府「国民の祝日」</li>
+          <li><span class="src-tag">NTA Corporate Number</span>このサービスは、国税庁法人番号システムのWeb-API機能を利用して取得した情報をもとに作成しているが、サービスの内容は国税庁によって保証されたものではない</li>
+          <li><span class="src-tag">MLIT</span>このサービスは、国土交通省不動産情報ライブラリのAPI機能を使用していますが、提供情報の最新性、正確性、完全性等が保証されたものではありません。</li>
+        </ul>
+      </div>
+      <div class="foot-meta">
+        <p><b>Questions or a missing field?</b> Open a ticket on the Issues tab of any Actor — first response within 48 hours.</p>
+        <p>Built as a TypeScript monorepo with golden regression tests on frozen API snapshots. Data sources are official government APIs and published datasets used under their published terms, including the Government of Japan Standard Terms of Use v2.0.</p>
+        <p><a class="btn" href="https://apify.com/store?search=japan%20official%20api" rel="noopener" style="margin-top:6px">Open Apify Store</a></p>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>JP OPEN DATA ACTORS — 日本公的データ×英語構造化</span>
+      <span>Independent. Not endorsed by any Japanese ministry or agency.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var nodes = document.querySelectorAll('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) {
+    nodes.forEach(function(n){ n.classList.add('visible'); });
+    return;
+  }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+  nodes.forEach(function(n){ io.observe(n); });
+})();
+</script>
+</body>
+</html>

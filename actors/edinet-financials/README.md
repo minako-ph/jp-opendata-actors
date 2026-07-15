@@ -81,6 +81,7 @@ All figures are normalized to **raw JPY** from EDINET's official CSV output (typ
 
 - **Not a full XBRL parser.** Figures are limited to the facts included in EDINET's official CSV output (type=5). For the complete fact set, download the XBRL packages from EDINET.
 - **Industry-specific statement formats** (banks, securities firms, insurers, etc.) can leave major items `null` — e.g. insurers under IFRS 17 report no `net_sales`/`gross_profit` line. Known coverage measured on real filings: standard Japan GAAP filers ≈26–27 of 28 fields, standard IFRS filers ≈26, insurance-format IFRS ≈17. `coverage` reports the per-record reality.
+- **US-GAAP filers are out of scope.** A small number of Japanese companies (mostly historically NYSE-listed firms) still file under US-GAAP. This Actor maps Japan GAAP and IFRS taxonomies only; a US-GAAP annual report is not rejected, but its financial fields come back `null` with `accounting_standard: null` and `coverage.mapped_fields: 0`. Check `accounting_standard` before relying on the numbers. (Note: such a document is still a billable `record-basic`, since it is a valid annual report.)
 - **Fund disclosures are out of scope** (excluded in date-range runs; passing a fund doc_id yields an explicit non-billable error row).
 - **Semi-annual reports (docTypeCode 160) are not supported** in v1 — annual securities reports (120, and 130 amendments when requested) only.
 - **Prior-year figures are as restated in the current report** — they come from the same CSV's prior-year context, not from the previous year's original filing.
